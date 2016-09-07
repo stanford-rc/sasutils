@@ -21,14 +21,13 @@ VERSION = '0.1.2'
 
 setup(name='sasutils',
       version=VERSION,
-      package_dir={'': 'lib'},
-      packages=find_packages('lib'),
+      packages=find_packages(),
       author='Stephane Thiell',
       author_email='sthiell@stanford.edu',
       license='Apache Software License',
-      url='https://github.com/stanford-rc/python-sasutils',
+      url='https://github.com/stanford-rc/sasutils',
       platforms=['GNU/Linux'],
-      keywords=['SAS'],
+      keywords=['SAS', 'SCSI', 'storage'],
       description='Python SAS utils',
       entry_points = {
             'console_scripts': [
