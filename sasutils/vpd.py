@@ -19,6 +19,7 @@
 __author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 
 from struct import unpack
+import subprocess
 
 def decode_vpd83_lu(pagebuf):
     """
@@ -47,3 +48,12 @@ def decode_vpd83_lu(pagebuf):
                                   for i in unpack('BBBBBBBB',
                                                   pagebuf[offset+4:offset+12]))
         offset = next_offset
+
+def vpd_get_page83_lu(blkdev):
+    """
+    Get page 0x83 Logical Unit using external command (sysfs vpd_pg83).
+    """
+    cmdargs = ['scsi_id', '--page=0x83', '--whitelisted',
+               '--device=/dev/' + blkdev]
+    output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    return output.rstrip()

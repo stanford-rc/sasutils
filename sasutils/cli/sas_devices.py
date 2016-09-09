@@ -25,7 +25,7 @@ import sys
 from sasutils.sas import SASHost, SASExpander, SASEndDevice
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
-from sasutils.vpd import decode_vpd83_lu
+from sasutils.vpd import decode_vpd83_lu, vpd_get_page83_lu
 
 
 class SASDevicesCLI(object):
@@ -82,8 +82,12 @@ class SASDevicesCLI(object):
 
             scsi_device = sas_end_device.scsi_device
             if hasattr(scsi_device, 'block'):
-                pg83 = bytes(scsi_device.attrs.vpd_pg83)
-                lu = decode_vpd83_lu(pg83)
+                try:
+                    pg83 = bytes(scsi_device.attrs.vpd_pg83)
+                    lu = decode_vpd83_lu(pg83)
+                except AttributeError:
+                    lu = vpd_get_page83_lu(scsi_device.block.name)
+
                 devmap.setdefault(lu, []).append(scsi_device.block)
 
         # list of set of enclosure
