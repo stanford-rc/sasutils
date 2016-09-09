@@ -31,6 +31,7 @@ setup(name='sasutils',
       description='Python SAS utils',
       entry_points = {
             'console_scripts': [
+                'sas_devices=sasutils.cli.sas_devices:main',
                 'sas_discover=sasutils.cli.sas_discover:main',
                 'sas_blkdev_snic_alias=sasutils.cli.sas_blkdev_snic_alias:main'
             ],
