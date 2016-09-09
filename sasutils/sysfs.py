@@ -146,7 +146,12 @@ class SysfsAttributes(collections.MutableMapping):
 
     def __getitem__(self, key):
         if not self.values.__contains__(key):
-            self.values[key] = SYSFSNODE_CLASS().get(self.paths[key], absolute=True)
+            try:
+                self.values[key] = SYSFSNODE_CLASS().get(self.paths[key],
+                                                         absolute=True)
+            except KeyError:
+                raise AttributeError("%r object has no attribute %r" %
+                                     (self.__class__.__name__, key))
         return self.values[key]
 
     def __delitem__(self, key):
@@ -170,14 +175,25 @@ class SysfsObject(object):
         self.name = str(sysfsnode)
         self.attrs = SysfsAttributes()
         self.classname = self.__class__.__name__
+        if type(sysfsnode) is str:
+            assert len(sysfsnode) > 0
         attrs = self.sysfsnode.glob('*', is_dir=False)
         for attr in attrs:
             self.attrs.add_path(attr, join(self.sysfsnode.path, attr))
 
+    def json_serialize(self):
+        """May be overridden to change json serialization, eg. to avoid
+        circular reference issues."""
+        return self.__dict__
+
     def to_json(self):
-        #self.attrs.load()
-        return json.dumps(self, default=lambda o: o.__dict__, sort_keys=True,
-                          indent=4)
+
+        def json_default(o):
+            if hasattr(o, 'json_serialize'):
+                return o.json_serialize()
+            return o.__dict__
+
+        return json.dumps(self, default=json_default, sort_keys=True, indent=4)
 
     def __eq__(self, other):
         return self.sysfsnode == other.sysfsnode
@@ -186,8 +202,8 @@ class SysfsObject(object):
         return hash(self.sysfsnode)
 
     def __repr__(self):
-        return '<%s.%s %s>' % (self.__module__, self.__class__.__name__,
-                               self.__dict__)
+        return '<%s.%s %r>' % (self.__module__, self.__class__.__name__,
+                               self.sysfsnode.path)
 
     __str__ = __repr__
 

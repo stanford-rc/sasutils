@@ -85,10 +85,21 @@ class BlockDevice(SysfsDevice):
         self.queue = SysfsObject(self.sysfsnode.node('queue'))
         self._array_device = None
 
+    def json_serialize(self):
+        data = dict(self.__dict__)
+        if self._scsi_device is not None:
+            data['_scsi_device'] = repr(self._scsi_device)
+        return data
+
     @property
     def array_device(self):
         if not self._array_device:
-            self._array_device = ArrayDevice(self.device.node('enclosure_device:*', default=''))
+            try:
+                array_node = self.device.node('enclosure_device:*')
+                self._array_device = ArrayDevice(array_node)
+            except KeyError:
+                # no enclosure_device, this may happen due to sysfs issues
+                pass
         return self._array_device
 
     @property
