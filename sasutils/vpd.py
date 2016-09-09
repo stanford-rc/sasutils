@@ -21,7 +21,8 @@ __author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 from struct import unpack
 import subprocess
 
-def decode_vpd83_lu(pagebuf):
+
+def vpd_decode_pg83_lu(pagebuf):
     """
     Get the addressed logical unit address from the device identification
     VPD page buffer provided (eg. content of vpd_pg83 in sysfs).

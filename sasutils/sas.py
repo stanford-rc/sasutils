@@ -18,7 +18,6 @@ from os.path import basename
 
 from sasutils.scsi import ArrayDevice, BlockDevice, SCSIDevice, SCSIHost
 from sasutils.sysfs import SysfsDevice
-from sasutils.vpd import decode_vpd83_lu
 
 
 #
