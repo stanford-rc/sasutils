@@ -26,11 +26,10 @@ KERNEL=="sd*", PROGRAM="/usr/bin/sas_blkdev_snic_alias %k", SYMLINK+="%c"
 """
 
 from __future__ import print_function
-from subprocess import check_output
-import re
 import sys
 
 from sasutils.sas import SASBlockDevice
+from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 
 
@@ -46,16 +45,18 @@ def sas_blkdev_snic_alias(blkdev):
     # Retrieve bay_identifier from matching sas_device
     bay = int(blkdev.end_device.sas_device.attrs.bay_identifier)
 
-    # Use links to array_device and enclosure to retrieve the ses sg device
-    ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_devname
+    snic = 'unknown_snic'
 
-    # SES nickname is not available through sysfs, use sg_ses tool instead
-    result = check_output(['sg_ses', '--page=snic', '-I0', '/dev/' + ses_sg])
-    for line in result.splitlines():
-        mobj = re.match(r'\s+nickname:\s*([^ ]+)', line)
-        if mobj:
-            return ALIAS_FORMAT.format(nickname=mobj.group(1),
-                                       bay_identifier=bay)
+    # Check for orphan device
+    if blkdev.array_device:
+
+        # Use links to array_device and enclosure to retrieve the ses sg device
+        ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_devname
+
+        # Get subenclosure nickname
+        snic = ses_get_snic_nickname(ses_sg)
+
+    return ALIAS_FORMAT.format(nickname=snic, bay_identifier=bay)
 
 def main():
     """Entry point for sas_blkdev_snic_alias command-line."""
