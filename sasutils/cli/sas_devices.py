@@ -61,21 +61,25 @@ class SASDevicesCLI(object):
             print(msgstr)
 
     def _print_lu_devlist(self, lu, devlist, maxpaths=None):
-        blkdevs = ','.join(dev.name for dev in devlist)
+        blkdevs = ','.join(dev.scsi_device.block.name for dev in devlist)
         sgdevs = ','.join(dev.scsi_device.scsi_generic.sg_devname
                           for dev in devlist)
         vendor = devlist[0].scsi_device.attrs.vendor
         model = devlist[0].scsi_device.attrs.model
         rev = devlist[0].scsi_device.attrs.rev
+
+        bay = int(devlist[0].sas_device.attrs.bay_identifier)
+
         paths = "%d" % len(devlist)
         if maxpaths and len(devlist) < maxpaths:
             paths += "*"
-        print('  %10s %12s %12s %-3s %10s %10s %6s' % (lu, blkdevs, sgdevs, paths,
-                                                  vendor, model, rev))
+
+        print('%3d %10s %12s %12s %-3s %10s %10s %6s' %
+              (bay, lu, blkdevs, sgdevs, paths, vendor, model, rev))
 
     def print_end_devices(self, sysfsnode):
 
-        devmap = {}
+        devmap = {} # LU -> list of SASEndDevice
 
         for node in sysfsnode:
             sas_end_device = SASEndDevice(node.node('device'))
@@ -88,13 +92,14 @@ class SASDevicesCLI(object):
                 except AttributeError:
                     lu = vpd_get_page83_lu(scsi_device.block.name)
 
-                devmap.setdefault(lu, []).append(scsi_device.block)
+                devmap.setdefault(lu, []).append(sas_end_device)
 
         # list of set of enclosure
         encgroups = []
         orphans = []
 
-        for lu, blklist in devmap.items():
+        for lu, sas_ed_list in devmap.items():
+            blklist = [d.scsi_device.block for d in sas_ed_list]
             for blk in blklist:
                 if blk.array_device is None:
                     print("Warning: no enclosure set for %s in %s" %
@@ -103,7 +108,7 @@ class SASDevicesCLI(object):
                        for blk in blklist
                        if blk.array_device is not None)
             if not encs:
-                orphans.append((lu, blklist))
+                orphans.append((lu, sas_ed_list))
                 continue
             done = False
             for encset in encgroups:
@@ -133,8 +138,8 @@ class SASDevicesCLI(object):
 
             cnt = 0
 
-            def enclosure_finder((lu, blklist)):
-                for blk in blklist:
+            def enclosure_finder((lu, sas_ed_list)):
+                for blk in (d.scsi_device.block for d in sas_ed_list):
                     if blk.array_device and blk.array_device.enclosure in encset:
                         return True
                 return False
@@ -143,7 +148,8 @@ class SASDevicesCLI(object):
             maxpaths = max(len(devs) for lu, devs in encdevs)
 
             if self.args.verbose:
-                for lu, devlist in encdevs:
+                for lu, devlist in sorted(encdevs, key=lambda o:
+                        int(o[1][0].sas_device.attrs.bay_identifier)):
                     self._print_lu_devlist(lu, devlist, maxpaths)
                     cnt += 1
             else:
