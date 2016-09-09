@@ -21,7 +21,7 @@ import argparse
 from itertools import ifilter
 import socket
 
-from sasutils.sas import SASHost, SASEndDevice
+from sasutils.sas import SASHost, SASExpander, SASEndDevice
 from sasutils.sysfs import sysfs
 from sasutils.vpd import decode_vpd83_lu
 
@@ -29,12 +29,28 @@ from sasutils.vpd import decode_vpd83_lu
 # Main class for sas_list
 #
 
-class SASListCLI(object):
+class SASDevicesCLI(object):
 
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument("-v", "--verbose", action="store_true")
         self.args = parser.parse_args()
+
+    def print_hosts(self, sysfsnode):
+        sas_hosts = []
+        for sas_host in sysfsnode:
+            sas_hosts.append(SASHost(sas_host.node('device')))
+
+        print("Found %d SAS hosts: %s" %
+              (len(sas_hosts), ','.join(host.name for host in sas_hosts)))
+
+    def print_expanders(self, sysfsnode):
+        sas_expanders = []
+        for expander in sysfsnode:
+            sas_expanders.append(SASExpander(expander.node('device')))
+
+        print("Found %d SAS expanders: %s" %
+              (len(sas_expanders), ','.join(exp.name for exp in sas_expanders)))
 
     def print_end_devices(self, sysfsnode):
 
@@ -53,7 +69,13 @@ class SASListCLI(object):
         encgroups = []
 
         for blklist in devmap.values():
-            encs = set(blk.array_device.enclosure for blk in blklist)
+            for blk in blklist:
+                if blk.array_device is None:
+                    print("Warning: no enclosure set for %s in %s" %
+                          (blk.name, blk.scsi_device.sysfsnode.path))
+            encs = set(blk.array_device.enclosure
+                       for blk in blklist
+                       if blk.array_device is not None)
             done = False
             for encset in encgroups:
                 if not encset.isdisjoint(encs):
@@ -63,7 +85,7 @@ class SASListCLI(object):
             if not done:
                 encgroups.append(encs)
 
-        print("Found %s enclosure groups" % len(encgroups))
+        print("Found active %s enclosure groups" % len(encgroups))
 
         for encset in encgroups:
             encinfolist = []
@@ -72,10 +94,16 @@ class SASListCLI(object):
                                                           enc.attrs.model,
                                                           enc.attrs.sas_address))
             print("Enclosure group: %s" % ''.join(encinfolist))
-    
+
             cnt = 0
-            for lu, devlist in ifilter(lambda (k, v): v[0].array_device.enclosure in encset,
-                                       devmap.items()):
+
+            def enclosure_finder((lu, blklist)):
+                for blk in blklist:
+                    if blk.array_device and blk.array_device.enclosure in encset:
+                        return True
+                return False
+
+            for lu, devlist in ifilter(enclosure_finder, devmap.items()):
                 blkdevs = ','.join(dev.name for dev in devlist)
                 sgdevs = ','.join(dev.scsi_device.scsi_generic.sg_devname
                                   for dev in devlist)
@@ -90,9 +118,18 @@ class SASListCLI(object):
 
 def main():
     """console_scripts entry point for sas_discover command-line."""
+
+    sas_devices_cli = SASDevicesCLI()
+
+    root = sysfs.node('class').node('sas_host')
+    sas_devices_cli.print_hosts(root)
+
+    root = sysfs.node('class').node('sas_expander')
+    sas_devices_cli.print_expanders(root)
+
     # start from /sys/class/sas_host
     root = sysfs.node('class').node('sas_end_device')
-    SASListCLI().print_end_devices(root)
+    sas_devices_cli.print_end_devices(root)
 
 if __name__ == '__main__':
     main()
