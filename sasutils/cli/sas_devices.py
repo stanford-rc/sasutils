@@ -20,6 +20,7 @@ from __future__ import print_function
 import argparse
 from itertools import ifilter
 import socket
+import sys
 
 from sasutils.sas import SASHost, SASExpander, SASEndDevice
 from sasutils.ses import ses_get_snic_nickname
@@ -40,25 +41,36 @@ class SASDevicesCLI(object):
         for sas_host in sysfsnode:
             sas_hosts.append(SASHost(sas_host.node('device')))
 
-        print("Found %d SAS hosts: %s" %
-              (len(sas_hosts), ','.join(host.name for host in sas_hosts)))
+        msgstr = "Found %d SAS hosts" % len(sas_hosts)
+        if self.args.verbose:
+            print("%s: %s" % (msgstr,
+                              ','.join(host.name for host in sas_hosts)))
+        else:
+            print(msgstr)
 
     def print_expanders(self, sysfsnode):
         sas_expanders = []
         for expander in sysfsnode:
             sas_expanders.append(SASExpander(expander.node('device')))
 
-        print("Found %d SAS expanders: %s" %
-              (len(sas_expanders), ','.join(exp.name for exp in sas_expanders)))
+        msgstr = "Found %d SAS expanders" % len(sas_expanders)
+        if self.args.verbose:
+            print("%s: %s" % (msgstr,
+                              ','.join(exp.name for exp in sas_expanders)))
+        else:
+            print(msgstr)
 
-    def _print_lu_devlist(self, lu, devlist):
+    def _print_lu_devlist(self, lu, devlist, maxpaths=None):
         blkdevs = ','.join(dev.name for dev in devlist)
         sgdevs = ','.join(dev.scsi_device.scsi_generic.sg_devname
                           for dev in devlist)
         vendor = devlist[0].scsi_device.attrs.vendor
         model = devlist[0].scsi_device.attrs.model
         rev = devlist[0].scsi_device.attrs.rev
-        print('  %10s %12s %12s %12s %12s %6s' % (lu, blkdevs, sgdevs,
+        paths = "%d" % len(devlist)
+        if maxpaths and len(devlist) < maxpaths:
+            paths += "*"
+        print('  %10s %12s %12s %-3s %10s %10s %6s' % (lu, blkdevs, sgdevs, paths,
                                                   vendor, model, rev))
 
     def print_end_devices(self, sysfsnode):
@@ -98,7 +110,7 @@ class SASDevicesCLI(object):
             if not done:
                 encgroups.append(encs)
 
-        print("Found %d active enclosure groups" % len(encgroups))
+        print("Found %d enclosure groups" % len(encgroups))
         if orphans:
             print("Found %d orphan devices" % len(orphans))
 
@@ -123,20 +135,29 @@ class SASDevicesCLI(object):
                         return True
                 return False
 
+            encdevs = list(ifilter(enclosure_finder, devmap.items()))
+            maxpaths = max(len(devs) for lu, devs in encdevs)
+
             if self.args.verbose:
-                for lu, devlist in ifilter(enclosure_finder, devmap.items()):
-                    self._print_lu_devlist(lu, devlist)
+                for lu, devlist in encdevs:
+                    self._print_lu_devlist(lu, devlist, maxpaths)
                     cnt += 1
             else:
                 folded = {}
-                for lu, devlist in ifilter(enclosure_finder, devmap.items()):
+                for lu, devlist in encdevs:
                     vendor = devlist[0].scsi_device.attrs.vendor
                     model = devlist[0].scsi_device.attrs.model
                     rev = devlist[0].scsi_device.attrs.rev
-                    folded.setdefault((vendor, model, rev), []).append(devlist)
+                    paths = len(devlist)
+                    folded.setdefault((vendor, model, rev, paths), []).append(devlist)
                     cnt += 1
-                for (vendor, model, rev), v in folded.items():
-                    print(" %d x %12s %12s %6s" % (len(v), vendor, model, rev))
+                print("NUM   %12s %12s %6s %5s"  % ('VENDOR', 'MODEL', 'REV', 'PATHS'))
+                for (vendor, model, rev, paths), v in folded.items():
+                    if maxpaths and paths < maxpaths:
+                        pathstr = '%s*' % paths
+                    else:
+                        pathstr = '%s ' % paths
+                    print("%3d x %12s %12s %6s %5s" % (len(v), vendor, model, rev, pathstr))
             print("Total: %d block devices in enclosure group" % cnt)
 
         if orphans:
@@ -150,15 +171,15 @@ def main():
 
     sas_devices_cli = SASDevicesCLI()
 
-    root = sysfs.node('class').node('sas_host')
-    sas_devices_cli.print_hosts(root)
-
-    root = sysfs.node('class').node('sas_expander')
-    sas_devices_cli.print_expanders(root)
-
-    # start from /sys/class/sas_host
-    root = sysfs.node('class').node('sas_end_device')
-    sas_devices_cli.print_end_devices(root)
+    try:
+        root = sysfs.node('class').node('sas_host')
+        sas_devices_cli.print_hosts(root)
+        root = sysfs.node('class').node('sas_expander')
+        sas_devices_cli.print_expanders(root)
+        root = sysfs.node('class').node('sas_end_device')
+        sas_devices_cli.print_end_devices(root)
+    except KeyError as err:
+        print("Not found: %s" % err, file=sys.stderr)
 
 if __name__ == '__main__':
     main()
