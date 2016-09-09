@@ -52,6 +52,16 @@ class SASDevicesCLI(object):
         print("Found %d SAS expanders: %s" %
               (len(sas_expanders), ','.join(exp.name for exp in sas_expanders)))
 
+    def _print_lu_devlist(self, lu, devlist):
+        blkdevs = ','.join(dev.name for dev in devlist)
+        sgdevs = ','.join(dev.scsi_device.scsi_generic.sg_devname
+                          for dev in devlist)
+        vendor = devlist[0].scsi_device.attrs.vendor
+        model = devlist[0].scsi_device.attrs.model
+        rev = devlist[0].scsi_device.attrs.rev
+        print('  %10s %12s %12s %12s %12s %6s' % (lu, blkdevs, sgdevs,
+                                                  vendor, model, rev))
+
     def print_end_devices(self, sysfsnode):
 
         devmap = {}
@@ -67,8 +77,9 @@ class SASDevicesCLI(object):
 
         # list of set of enclosure
         encgroups = []
+        orphans = []
 
-        for blklist in devmap.values():
+        for lu, blklist in devmap.items():
             for blk in blklist:
                 if blk.array_device is None:
                     print("Warning: no enclosure set for %s in %s" %
@@ -76,6 +87,9 @@ class SASDevicesCLI(object):
             encs = set(blk.array_device.enclosure
                        for blk in blklist
                        if blk.array_device is not None)
+            if not encs:
+                orphans.append((lu, blklist))
+                continue
             done = False
             for encset in encgroups:
                 if not encset.isdisjoint(encs):
@@ -85,7 +99,8 @@ class SASDevicesCLI(object):
             if not done:
                 encgroups.append(encs)
 
-        print("Found active %s enclosure groups" % len(encgroups))
+        print("Found %d active enclosure groups" % len(encgroups))
+        print("Found %d orphan devices" % len(orphans))
 
         for encset in encgroups:
             encinfolist = []
@@ -104,16 +119,14 @@ class SASDevicesCLI(object):
                 return False
 
             for lu, devlist in ifilter(enclosure_finder, devmap.items()):
-                blkdevs = ','.join(dev.name for dev in devlist)
-                sgdevs = ','.join(dev.scsi_device.scsi_generic.sg_devname
-                                  for dev in devlist)
-                vendor = devlist[0].scsi_device.attrs.vendor
-                model = devlist[0].scsi_device.attrs.model
-                rev = devlist[0].scsi_device.attrs.rev
-                print('  %10s %12s %12s %12s %12s %6s' % (lu, blkdevs, sgdevs,
-                                                      vendor, model, rev))
+                self._print_lu_devlist(lu, devlist)
                 cnt += 1
             print("Total: %d block devices in enclosure group" % cnt)
+
+        if orphans:
+            print("Orphan devices:")
+        for lu, blklist in orphans:
+            self._print_lu_devlist(lu, blklist)
 
 
 def main():
