@@ -22,14 +22,13 @@ from itertools import ifilter
 import socket
 
 from sasutils.sas import SASHost, SASExpander, SASEndDevice
+from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 from sasutils.vpd import decode_vpd83_lu
 
-#
-# Main class for sas_list
-#
 
 class SASDevicesCLI(object):
+    """Main class for sas_devises command-line interface."""
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -100,14 +99,20 @@ class SASDevicesCLI(object):
                 encgroups.append(encs)
 
         print("Found %d active enclosure groups" % len(encgroups))
-        print("Found %d orphan devices" % len(orphans))
+        if orphans:
+            print("Found %d orphan devices" % len(orphans))
 
         for encset in encgroups:
             encinfolist = []
-            for enc in encset:
-                encinfolist.append('[%s %s, addr: %s]' % (enc.attrs.vendor,
-                                                          enc.attrs.model,
-                                                          enc.attrs.sas_address))
+            for enc in sorted(encset):
+                snic = ses_get_snic_nickname(enc.scsi_generic.name)
+                if snic:
+                    encinfolist.append('[%s]' % snic)
+                else:
+                    encinfolist.append('[%s %s, addr: %s]' % (enc.attrs.vendor,
+                                                              enc.attrs.model,
+                                                              enc.attrs.sas_address))
+
             print("Enclosure group: %s" % ''.join(encinfolist))
 
             cnt = 0
@@ -118,9 +123,20 @@ class SASDevicesCLI(object):
                         return True
                 return False
 
-            for lu, devlist in ifilter(enclosure_finder, devmap.items()):
-                self._print_lu_devlist(lu, devlist)
-                cnt += 1
+            if self.args.verbose:
+                for lu, devlist in ifilter(enclosure_finder, devmap.items()):
+                    self._print_lu_devlist(lu, devlist)
+                    cnt += 1
+            else:
+                folded = {}
+                for lu, devlist in ifilter(enclosure_finder, devmap.items()):
+                    vendor = devlist[0].scsi_device.attrs.vendor
+                    model = devlist[0].scsi_device.attrs.model
+                    rev = devlist[0].scsi_device.attrs.rev
+                    folded.setdefault((vendor, model, rev), []).append(devlist)
+                    cnt += 1
+                for (vendor, model, rev), v in folded.items():
+                    print(" %d x %12s %12s %6s" % (len(v), vendor, model, rev))
             print("Total: %d block devices in enclosure group" % cnt)
 
         if orphans:
