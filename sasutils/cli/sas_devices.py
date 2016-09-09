@@ -81,7 +81,7 @@ class SASDevicesCLI(object):
             sas_end_device = SASEndDevice(node.node('device'))
 
             scsi_device = sas_end_device.scsi_device
-            if hasattr(scsi_device, 'block'):
+            if scsi_device.block:
                 try:
                     pg83 = bytes(scsi_device.attrs.vpd_pg83)
                     lu = vpd_decode_pg83_lu(pg83)

@@ -48,11 +48,11 @@ class SCSIDevice(SysfsObject):
         try:
             self.scsi_disk = SCSIDisk(self.sysfsnode)
         except KeyError:
-            pass
+            self.scsi_disk = None
         try:
             self.block = BlockDevice(self.sysfsnode, scsi_device=self)
         except KeyError:
-            pass
+            self.block = None
 
 #
 # SCSI bus classes

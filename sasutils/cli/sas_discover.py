@@ -140,7 +140,7 @@ class SASDiscoverCLI(object):
             ikeys = ('vendor', 'model', 'rev', 'sas_address')
             iargs = dict((k, end_device.scsi_device.attrs[k]) for k in ikeys)
             dev_info = ', '.join(dev_info_fmt).format(**iargs)
-            if hasattr(end_device.scsi_device, 'block'):
+            if end_device.scsi_device.block:
                 block = end_device.scsi_device.block
                 blk_size = int(block.attrs.size)
                 hw_sector_size = float(block.queue.attrs.hw_sector_size)
