@@ -107,3 +107,9 @@ class BlockDevice(SysfsDevice):
         if not self._scsi_device:
             self._scsi_device = SCSIDevice(self.device)
         return self._scsi_device
+
+    def sizebytes(self):
+        """Return block device size in bytes"""
+        blk_size = int(self.attrs.size)
+        hw_sector_size = float(self.queue.attrs.hw_sector_size)
+        return blk_size * hw_sector_size
