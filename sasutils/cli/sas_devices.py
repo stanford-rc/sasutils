@@ -18,6 +18,7 @@
 
 from __future__ import print_function
 import argparse
+from collections import namedtuple
 from itertools import ifilter
 import socket
 import sys
@@ -60,22 +61,47 @@ class SASDevicesCLI(object):
         else:
             print(msgstr)
 
+    def _get_dev_attrs(self, sas_end_device, maxpaths=None):
+        res = {}
+
+        # Vendor info
+        res['vendor'] = sas_end_device.scsi_device.attrs.vendor
+        res['model'] = sas_end_device.scsi_device.attrs.model
+        res['rev'] = sas_end_device.scsi_device.attrs.rev
+
+        # Bay identifier
+        res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
+
+        # Size of block device
+        blk_sz = sas_end_device.scsi_device.block.sizebytes()
+        if blk_sz >= 1e12:
+            blk_sz_info = "%.1fTB" % (blk_sz / 1e12)
+        else:
+            blk_sz_info = "%.1fGB" % (blk_sz / 1e9)
+        res['blk_sz_info'] = blk_sz_info
+
+        return res
+
     def _print_lu_devlist(self, lu, devlist, maxpaths=None):
-        blkdevs = ','.join(dev.scsi_device.block.name for dev in devlist)
-        sgdevs = ','.join(dev.scsi_device.scsi_generic.sg_devname
-                          for dev in devlist)
-        vendor = devlist[0].scsi_device.attrs.vendor
-        model = devlist[0].scsi_device.attrs.model
-        rev = devlist[0].scsi_device.attrs.rev
+        # use the first device for the following common attributes
+        info = self._get_dev_attrs(devlist[0])
+        info['lu'] = lu
+        info['blkdevs'] = ','.join(dev.scsi_device.block.name
+                                   for dev in devlist)
+        info['sgdevs'] = ','.join(dev.scsi_device.scsi_generic.sg_devname
+                                  for dev in devlist)
 
-        bay = int(devlist[0].sas_device.attrs.bay_identifier)
-
+        # Number of paths
         paths = "%d" % len(devlist)
         if maxpaths and len(devlist) < maxpaths:
             paths += "*"
+        info['paths'] = paths
 
-        print('%3d %10s %12s %12s %-3s %10s %10s %6s' %
-              (bay, lu, blkdevs, sgdevs, paths, vendor, model, rev))
+        #print('%3d %10s %12s %12s %-3s %10s %10s %6s %8s' %
+        #      (bay, lu, blkdevs, sgdevs, paths, vendor, model, rev,
+        #       blk_sz_info))
+        print('{bay:>3} {lu:>10} {blkdevs:>12} {sgdevs:>12} {paths:<3} '
+              '{vendor:>10} {model:>10} {rev:>8} {blk_sz_info}'.format(**info))
 
     def print_end_devices(self, sysfsnode):
 
@@ -155,19 +181,20 @@ class SASDevicesCLI(object):
             else:
                 folded = {}
                 for lu, devlist in encdevs:
-                    vendor = devlist[0].scsi_device.attrs.vendor
-                    model = devlist[0].scsi_device.attrs.model
-                    rev = devlist[0].scsi_device.attrs.rev
-                    paths = len(devlist)
-                    folded.setdefault((vendor, model, rev, paths), []).append(devlist)
+                    devinfo = self._get_dev_attrs(devlist[0])
+                    devinfo['paths'] = len(devlist)
+                    del devinfo['bay'] # do not include bay on key :)
+                    folded_key = namedtuple('FoldedDict', devinfo.keys())(**devinfo)
+                    folded.setdefault(folded_key, []).append(devlist)
                     cnt += 1
-                print("NUM   %12s %12s %6s %5s"  % ('VENDOR', 'MODEL', 'REV', 'PATHS'))
-                for (vendor, model, rev, paths), v in folded.items():
-                    if maxpaths and paths < maxpaths:
-                        pathstr = '%s*' % paths
+                print("NUM   %12s %12s %6s %6s"  % ('VENDOR', 'MODEL', 'REV', 'PATHS'))
+                for t, v in folded.items():
+                    if maxpaths and t.paths < maxpaths:
+                        pathstr = '%s*' % t.paths
                     else:
-                        pathstr = '%s ' % paths
-                    print("%3d x %12s %12s %6s %5s" % (len(v), vendor, model, rev, pathstr))
+                        pathstr = '%s ' % t.paths
+                    infostr = '{vendor:>12} {model:>12} {rev:>6} {paths:>6}'.format(**t._asdict())
+                    print('%3d x %s' % (len(v), infostr))
             print("Total: %d block devices in enclosure group" % cnt)
 
         if orphans:
