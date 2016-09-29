@@ -21,6 +21,7 @@ import argparse
 import socket
 
 from sasutils.sas import SASHost
+from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 
 #
@@ -54,7 +55,7 @@ def format_attrs(attrlist, attrs):
     attr_fmt = ('%s: {%s}' % t for t in attrlist)
     iargs = dict((k, attrs[k]) for _, k in attrlist)
     return ', '.join(attr_fmt).format(**iargs)
-    
+
 
 #
 # Main class for sas_discover
@@ -64,7 +65,7 @@ class SASDiscoverCLI(object):
 
     def __init__(self):
         parser = argparse.ArgumentParser()
-        parser.add_argument("-v", "--verbose", action="store_true")
+        parser.add_argument('--verbose', '-v', action='count')
         self.args = parser.parse_args()
 
     def print_hosts(self, sysfsnode, prinfo):
@@ -80,12 +81,13 @@ class SASDiscoverCLI(object):
             info_fmt = ['board: {board_name} {board_assembly} {board_tracer}',
                         'product: {version_product}', 'bios: {version_bios}',
                         'fw: {version_fw}']
-            if self.args.verbose:
+            if self.args.verbose > 0:
                 info_fmt.append('addr: {host_sas_address}')
 
             ikeys = ('board_name', 'board_assembly', 'board_tracer',
                      'host_sas_address', 'version_product', 'version_bios',
                      'version_fw')
+
             iargs = dict((k, sas_host.scsi_host.attrs[k]) for k in ikeys)
 
             print('%s%s: %s' % (prompt, sas_host.name,
@@ -109,21 +111,29 @@ class SASDiscoverCLI(object):
             linkinfo = '-%dx--' % len(port.phys)
 
             dev_info = ''
-            if self.args.verbose:
+
+            if self.args.verbose > 0:
                 dev_info = format_attrs((('addr', 'sas_address'),),
                                         expander.sas_device.attrs)
             print('%s%s%s %s %s' % (prompt, linkinfo, expander.name,
                                     exp_info, dev_info))
 
+            exp_blkdevs = []
+
             poff = len(linkinfo)
             num_ports = len(expander.ports)
             for index, port in enumerate(expander.ports):
-                if index == num_ports - 1:
+                if index == num_ports - 1 and not exp_blkdevs:
                     self.print_expanders(port, adv_prompt(prinfo, poff, True))
-                    self.print_devices(port, adv_prompt(prinfo, poff, True))
+                    blkdevs = self.print_devices(port, adv_prompt(prinfo, poff, True))
                 else:
                     self.print_expanders(port, adv_prompt(prinfo, poff))
-                    self.print_devices(port, adv_prompt(prinfo, poff))
+                    blkdevs = self.print_devices(port, adv_prompt(prinfo, poff))
+                exp_blkdevs += blkdevs
+            if exp_blkdevs:
+                prompt = gen_prompt(adv_prompt(prinfo, poff, True))
+                print('%s %d block devices (use -v for details)'
+                      % (prompt, len(exp_blkdevs)))
 
     def print_devices(self, port, prinfo):
         prompt = gen_prompt(prinfo)
@@ -131,6 +141,8 @@ class SASDiscoverCLI(object):
 
         if len(port.end_devices) > 1:
             print('warning len(port.end_devices) == %d' % len(port.end_devices))
+
+        blkdevs = []
 
         for end_device in port.end_devices:
             dev_info_fmt = ['vendor: {vendor}', 'model: {model}', 'rev: {rev}']
@@ -140,8 +152,14 @@ class SASDiscoverCLI(object):
             ikeys = ('vendor', 'model', 'rev', 'sas_address')
             iargs = dict((k, end_device.scsi_device.attrs[k]) for k in ikeys)
             dev_info = ', '.join(dev_info_fmt).format(**iargs)
+
             if end_device.scsi_device.block:
                 block = end_device.scsi_device.block
+
+                if not self.args.verbose:
+                    blkdevs.append(block)
+                    continue
+
                 blk_size = int(block.attrs.size)
                 hw_sector_size = float(block.queue.attrs.hw_sector_size)
                 blk_info = "size %.1fTB" % (blk_size * hw_sector_size / 1e12)
@@ -149,9 +167,14 @@ class SASDiscoverCLI(object):
                 print('%s%s%s %s %s' % (prompt, linkinfo, end_device.name,
                                         dev_info, blk_info))
             else:
+                sg = end_device.scsi_device.scsi_generic
+                snic = ses_get_snic_nickname(sg.name)
+                if snic:
+                    dev_info += ', snic: %s' % snic
                 print('%s%s%s %s' % (prompt, linkinfo, end_device.name,
                                      dev_info))
 
+        return blkdevs
 
 def main():
     """console_scripts entry point for sas_discover command-line."""
