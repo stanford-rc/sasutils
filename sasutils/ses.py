@@ -29,7 +29,9 @@ def ses_get_snic_nickname(sg_devname):
     """Get subenclosure nickname (SES-2) [snic]"""
     # SES nickname is not available through sysfs, use sg_ses tool instead
     cmdargs = ['sg_ses', '--page=snic', '-I0', '/dev/' + sg_devname]
-    stdout = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
+    stdout = subprocess.Popen(cmdargs,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE).communicate()[0]
     for line in stdout.splitlines():
         mobj = re.match(r'\s+nickname:\s*([^ ]+)', line)
         if mobj:
