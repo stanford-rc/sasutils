@@ -81,7 +81,7 @@ class SASDiscoverCLI(object):
             info_fmt = ['board: {board_name} {board_assembly} {board_tracer}',
                         'product: {version_product}', 'bios: {version_bios}',
                         'fw: {version_fw}']
-            if self.args.verbose > 0:
+            if self.args.verbose > 1:
                 info_fmt.append('addr: {host_sas_address}')
 
             ikeys = ('board_name', 'board_assembly', 'board_tracer',
@@ -112,7 +112,7 @@ class SASDiscoverCLI(object):
 
             dev_info = ''
 
-            if self.args.verbose > 0:
+            if self.args.verbose > 1:
                 dev_info = format_attrs((('addr', 'sas_address'),),
                                         expander.sas_device.attrs)
             print('%s%s%s %s %s' % (prompt, linkinfo, expander.name,
@@ -146,7 +146,7 @@ class SASDiscoverCLI(object):
 
         for end_device in port.end_devices:
             dev_info_fmt = ['vendor: {vendor}', 'model: {model}', 'rev: {rev}']
-            if self.args.verbose:
+            if self.args.verbose > 1:
                 dev_info_fmt.append('addr: {sas_address}')
 
             ikeys = ('vendor', 'model', 'rev', 'sas_address')
