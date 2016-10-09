@@ -33,6 +33,14 @@ from sasutils.vpd import vpd_get_page80_sn
 class SASDevicesCLI(object):
     """Main class for sas_devises command-line interface."""
 
+    HDR_DEVLIST_VERB = {'bay': 'BAY', 'lu': 'LOGICAL UNIT', 'paths': 'PATHS',
+                        'blkdevs': 'BLOCK_DEVS', 'sgdevs': 'SG_DEVS',
+                        'vendor': 'VENDOR', 'model': 'MODEL', 'rev': 'REV',
+                        'pg80': 'SERIAL_NUMBER', 'blk_sz_info': 'SIZE'}
+    FMT_DEVLIST_VERB = '{bay:>3} {lu:>18} {blkdevs:>12} {sgdevs:>12} ' \
+                       '{paths:>5} {vendor:>8} {model:>16} {pg80:>22}' \
+                       '{rev:>8} {blk_sz_info}'
+
     def __init__(self):
         parser = argparse.ArgumentParser()
         parser.add_argument("-v", "--verbose", action="store_true")
@@ -86,10 +94,10 @@ class SASDevicesCLI(object):
             scsi_device = sas_end_device.scsi_device
             try:
                 pg80 = scsi_device.attrs.vpd_pg80
-                res['vpd_pg80'] = pg80[4:]
+                res['pg80'] = pg80[4:]
             except AttributeError:
                 pg80 = vpd_get_page80_sn(scsi_device.block.name)
-                res['vpd_pg80'] = pg80
+                res['pg80'] = pg80
 
         return res
 
@@ -108,12 +116,7 @@ class SASDevicesCLI(object):
             paths += "*"
         info['paths'] = paths
 
-        #print('%3d %10s %12s %12s %-3s %10s %10s %6s %8s' %
-        #      (bay, lu, blkdevs, sgdevs, paths, vendor, model, rev,
-        #       blk_sz_info))
-        print('{bay:>3} {lu:>10} {blkdevs:>12} {sgdevs:>12} {paths:<3} '
-              '{vendor:>10} {model:>10} {vpd_pg80:>24} {rev:>8} '
-              '{blk_sz_info}'.format(**info))
+        print(self.FMT_DEVLIST_VERB.format(**info))
 
     def print_end_devices(self, sysfsnode):
 
@@ -186,6 +189,7 @@ class SASDevicesCLI(object):
             maxpaths = max(len(devs) for lu, devs in encdevs)
 
             if self.args.verbose:
+                print(self.FMT_DEVLIST_VERB.format(**self.HDR_DEVLIST_VERB))
                 for lu, devlist in sorted(encdevs, key=lambda o:
                         int(o[1][0].sas_device.attrs.bay_identifier)):
                     self._print_lu_devlist(lu, devlist, maxpaths)
