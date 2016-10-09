@@ -160,9 +160,11 @@ class SASDiscoverCLI(object):
                     blkdevs.append(block)
                     continue
 
-                blk_size = int(block.attrs.size)
-                hw_sector_size = float(block.queue.attrs.hw_sector_size)
-                blk_info = "size %.1fTB" % (blk_size * hw_sector_size / 1e12)
+                size = block.sizebytes()
+                if size >= 1e12:
+                    blk_info = "size %.1fTB" % (size / 1e12)
+                else:
+                    blk_info = "size %.1fGB" % (size / 1e9)
                 #print(dict(end_device.scsi_device.block.queue.attrs))
                 print('%s%s%s %s %s' % (prompt, linkinfo, end_device.name,
                                         dev_info, blk_info))

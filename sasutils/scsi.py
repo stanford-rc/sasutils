@@ -110,6 +110,6 @@ class BlockDevice(SysfsDevice):
 
     def sizebytes(self):
         """Return block device size in bytes"""
-        blk_size = int(self.attrs.size)
-        hw_sector_size = float(self.queue.attrs.hw_sector_size)
-        return blk_size * hw_sector_size
+        blk_size = float(self.attrs.size)
+        logical_block_size = float(self.queue.attrs.logical_block_size)
+        return blk_size * logical_block_size
