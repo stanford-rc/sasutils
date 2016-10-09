@@ -70,9 +70,10 @@ class SASNode(SysfsDevice):
 
 
     def __repr__(self):
-        return '<%s.%s phys=%d ports=%d>' % (self.__module__,
-                                             self.__class__.__name__,
-                                             len(self.phys), len(self.ports))
+        return '<%s.%s %s phys=%d ports=%d>' % (self.__module__,
+                                                self.__class__.__name__,
+                                                self.sysfsnode.path,
+                                                len(self.phys), len(self.ports))
 
     __str__ = __repr__
 
