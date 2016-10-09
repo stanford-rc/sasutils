@@ -18,6 +18,27 @@
 
 from sasutils.sysfs import SysfsDevice, SysfsObject
 
+
+# DEVICE TYPES
+# https://en.wikipedia.org/wiki/SCSI_Peripheral_Device_Type
+
+TYPE_DISK = 0x00
+TYPE_TAPE = 0x01
+TYPE_PRINTER = 0x02
+TYPE_PROCESSOR = 0x03   # HP scanners use this
+TYPE_WORM = 0x04        # Treated as ROM by our system
+TYPE_ROM = 0x05
+TYPE_SCANNER = 0x06
+TYPE_MOD = 0x07         # Magneto-optical disk treated as TYPE_DISK
+TYPE_MEDIUM_CHANGER = 0x08
+TYPE_COMM = 0x09        # Communications device
+TYPE_RAID = 0x0c
+TYPE_ENCLOSURE = 0x0d   # Enclosure Services Device
+TYPE_RBC = 0x0e
+TYPE_OSD = 0x11
+TYPE_NO_LUN = 0x7f
+
+
 #
 # SCSI classes
 #
