@@ -68,7 +68,6 @@ class SASNode(SysfsDevice):
             #print('node has phy %s' % phy.path)
             self.phys.append(SASPhy(phy)) #.node(phy))) #phy.node('sas_phy/phy-*')))
 
-
     def __repr__(self):
         return '<%s.%s %s phys=%d ports=%d>' % (self.__module__,
                                                 self.__class__.__name__,
@@ -76,6 +75,17 @@ class SASNode(SysfsDevice):
                                                 len(self.phys), len(self.ports))
 
     __str__ = __repr__
+
+    def end_devices_by_scsi_type(self, device_type):
+        """
+        Iterate over end_devices (direct children) by scsi type.
+        SCSI types are defined in the scsi module.
+        """
+        for port in self.ports:
+            for end_device in port.end_devices:
+                if int(end_device.scsi_device.attrs.type) == int(device_type):
+                    yield end_device
+
 
 class SASHost(SASNode):
 
