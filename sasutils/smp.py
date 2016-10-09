@@ -44,6 +44,8 @@ __author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 
 import re
 from subprocess import check_output
+from sysfs import SysfsObject
+
 
 class PhyBaseDesc(object):
     """SAS Phy description (disabled)."""
@@ -100,6 +102,8 @@ class SMPDiscover(object):
 
     def __init__(self, bsg):
         """Constructor for SMPDiscover."""
+        if isinstance(bsg, SysfsObject):
+            bsg = bsg.name
         self.bsg = bsg if bsg.startswith('/') else '/dev/bsg/' + bsg
         self._attached_phys = {}
         self._detached_phys = {}
