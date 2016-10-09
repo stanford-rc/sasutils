@@ -1,6 +1,7 @@
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
+# Written by Stephane Thiell <sthiell@stanford.edu>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
