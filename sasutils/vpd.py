@@ -50,9 +50,21 @@ def vpd_decode_pg83_lu(pagebuf):
                                                   pagebuf[offset+4:offset+12]))
         offset = next_offset
 
+#
+# Support for RHEL/CentOS 6 (missing sysfs vpd_pg80 and vpd_pg83)
+#
+def vpd_get_page80_sn(blkdev):
+    """
+    Get page 0x80 Serial Number using external command.
+    """
+    cmdargs = ['scsi_id', '--page=0x80', '--whitelisted',
+               '--device=/dev/' + blkdev]
+    output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    return output.rstrip().split()[-1]
+
 def vpd_get_page83_lu(blkdev):
     """
-    Get page 0x83 Logical Unit using external command (sysfs vpd_pg83).
+    Get page 0x83 Logical Unit using external command.
     """
     cmdargs = ['scsi_id', '--page=0x83', '--whitelisted',
                '--device=/dev/' + blkdev]

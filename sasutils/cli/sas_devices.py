@@ -27,6 +27,7 @@ from sasutils.sas import SASHost, SASExpander, SASEndDevice
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 from sasutils.vpd import vpd_decode_pg83_lu, vpd_get_page83_lu
+from sasutils.vpd import vpd_get_page80_sn
 
 
 class SASDevicesCLI(object):
@@ -61,16 +62,13 @@ class SASDevicesCLI(object):
         else:
             print(msgstr)
 
-    def _get_dev_attrs(self, sas_end_device, maxpaths=None):
+    def _get_dev_attrs(self, sas_end_device, with_sn=True):
         res = {}
 
         # Vendor info
         res['vendor'] = sas_end_device.scsi_device.attrs.vendor
         res['model'] = sas_end_device.scsi_device.attrs.model
         res['rev'] = sas_end_device.scsi_device.attrs.rev
-
-        # Bay identifier
-        res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
 
         # Size of block device
         blk_sz = sas_end_device.scsi_device.block.sizebytes()
@@ -79,6 +77,19 @@ class SASDevicesCLI(object):
         else:
             blk_sz_info = "%.1fGB" % (blk_sz / 1e9)
         res['blk_sz_info'] = blk_sz_info
+
+        if with_sn:
+            # Bay identifier
+            res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
+
+            # Serial number
+            scsi_device = sas_end_device.scsi_device
+            try:
+                pg80 = scsi_device.attrs.vpd_pg80
+                res['vpd_pg80'] = pg80[4:]
+            except AttributeError:
+                pg80 = vpd_get_page80_sn(scsi_device.block.name)
+                res['vpd_pg80'] = pg80
 
         return res
 
@@ -101,7 +112,8 @@ class SASDevicesCLI(object):
         #      (bay, lu, blkdevs, sgdevs, paths, vendor, model, rev,
         #       blk_sz_info))
         print('{bay:>3} {lu:>10} {blkdevs:>12} {sgdevs:>12} {paths:<3} '
-              '{vendor:>10} {model:>10} {rev:>8} {blk_sz_info}'.format(**info))
+              '{vendor:>10} {model:>10} {vpd_pg80:>24} {rev:>8} '
+              '{blk_sz_info}'.format(**info))
 
     def print_end_devices(self, sysfsnode):
 
@@ -181,9 +193,9 @@ class SASDevicesCLI(object):
             else:
                 folded = {}
                 for lu, devlist in encdevs:
-                    devinfo = self._get_dev_attrs(devlist[0])
+                    # try to regroup disks by getting common attributes
+                    devinfo = self._get_dev_attrs(devlist[0], with_sn=False)
                     devinfo['paths'] = len(devlist)
-                    del devinfo['bay'] # do not include bay on key :)
                     folded_key = namedtuple('FoldedDict', devinfo.keys())(**devinfo)
                     folded.setdefault(folded_key, []).append(devlist)
                     cnt += 1
@@ -204,7 +216,7 @@ class SASDevicesCLI(object):
 
 
 def main():
-    """console_scripts entry point for sas_discover command-line."""
+    """console_scripts entry point for sas_devices command-line."""
 
     sas_devices_cli = SASDevicesCLI()
 
