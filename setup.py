@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
+# Written by Stephane Thiell <sthiell@stanford.edu>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +18,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 setup(name='sasutils',
       version=VERSION,
@@ -28,12 +29,21 @@ setup(name='sasutils',
       url='https://github.com/stanford-rc/sasutils',
       platforms=['GNU/Linux'],
       keywords=['SAS', 'SCSI', 'storage'],
-      description='Python SAS utils',
+      description='Serial Attached SCSI (SAS) Linux utilities',
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'Intended Audience :: System Administrators',
+          'Operating System :: POSIX :: Linux',
+          'Programming Language :: Python',
+          'Topic :: System :: Systems Administration'
+      ],
       entry_points = {
             'console_scripts': [
                 'sas_devices=sasutils.cli.sas_devices:main',
                 'sas_discover=sasutils.cli.sas_discover:main',
-                'sas_sd_snic_alias=sasutils.cli.sas_sd_snic_alias:main'
+                'sas_sd_snic_alias=sasutils.cli.sas_sd_snic_alias:main',
+                'ses_report=sasutils.cli.ses_report:main'
             ],
       }
      )
