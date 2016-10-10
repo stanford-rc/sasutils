@@ -30,6 +30,7 @@ setup(name='sasutils',
       platforms=['GNU/Linux'],
       keywords=['SAS', 'SCSI', 'storage'],
       description='Serial Attached SCSI (SAS) Linux utilities',
+      long_description=open('README.rst').read(),
       classifiers=[
           'Development Status :: 4 - Beta',
           'Environment :: Console',
