@@ -17,7 +17,7 @@
 
 """SES utilities
 
-Requires sg3_utils.
+Requires sg_ses from sg3_utils.
 """
 
 __author__ = 'sthiell@stanford.edu (Stephane Thiell)'
@@ -28,22 +28,6 @@ import subprocess
 
 
 LOGGER = logging.getLogger(__name__)
-
-
-class SESElementDescriptorMetricInfo(object):
-    """Class to represent a SES Element descriptor metric."""
-
-    def __init__(self, element_type, descriptor, key, unit, value):
-        self.element_type = element_type
-        self.descriptor = descriptor
-        self.key = key
-        self.unit = unit
-        self.value = value
-
-    def asdict(self):
-        """Return a dict containing ed metric details."""
-        # just use underlying __dict__
-        return self.__dict__
 
 
 def ses_get_snic_nickname(sg_devname):
@@ -59,11 +43,8 @@ def ses_get_snic_nickname(sg_devname):
         if mobj:
             return mobj.group(1)
 
-def ses_get_ed_metrics(sg_devname):
-    """
-    Return environment metrics (as SESElementDescriptorMetricInfo objects)
-    from SES descriptor page.
-    """
+def _ses_get_ed_line(sg_devname):
+    """Helper function to get element descriptor associated lines."""
     cmdargs = ['sg_ses', '--page=ed', '--join', '/dev/' + sg_devname]
     LOGGER.debug('ses_get_ed_metrics: executing: %s', cmdargs)
     stdout = subprocess.Popen(cmdargs,
@@ -81,12 +62,31 @@ def ses_get_ed_metrics(sg_devname):
                 descriptor = mobj.group(1).strip()
                 descriptor = descriptor.replace(' ', '_').replace('.', '_')
         else:
-            line = line.strip()
+            yield element_type, descriptor, line.strip()
 
-            # Environment metrics
-            mobj = re.search(r'(\w+)[:=]\s*([-+]*[0-9]+(\.[0-9]+)?)\s+(\w+)',
-                             line)
-            if mobj:
-                key, value, unit = mobj.group(1, 2, 4)
-                yield SESElementDescriptorMetricInfo(element_type, descriptor,
-                                                     key, unit, value)
+def ses_get_ed_metrics(sg_devname):
+    """
+    Return environment metrics as a dictionary from the SES Element
+    Descriptor page.
+    """
+    for element_type, descriptor, line in _ses_get_ed_line(sg_devname):
+        # Look for environment metrics
+        mobj = re.search(r'(\w+)[:=]\s*([-+]*[0-9]+(\.[0-9]+)?)\s+(\w+)', line)
+        if mobj:
+            key, value, unit = mobj.group(1, 2, 4)
+            yield dict((('element_type', element_type),
+                        ('descriptor', descriptor), ('key', key),
+                        ('value', value), ('unit', unit)))
+
+def ses_get_ed_status(sg_devname):
+    """
+    Return different status code as a dictionary from the SES Element
+    Descriptor page.
+    """
+    for element_type, descriptor, line in _ses_get_ed_line(sg_devname):
+        # Look for status info
+        mobj = re.search(r'status:\s*(.+)', line)
+        if mobj:
+            status = mobj.group(1).replace(' ', '_')
+            yield dict((('element_type', element_type),
+                        ('descriptor', descriptor), ('status', status)))

@@ -30,12 +30,13 @@ import sys
 
 from sasutils.sas import SASExpander
 from sasutils.scsi import TYPE_ENCLOSURE
-from sasutils.ses import ses_get_ed_metrics, ses_get_snic_nickname
+from sasutils.ses import ses_get_ed_metrics, ses_get_ed_status
+from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 
 
-def main():
-    """console_scripts entry point for the ses_report command-line."""
+def _init_argparser():
+    """Initialize argparser object for ses_report command-line."""
     desc = 'SES status and metrics reporting utility (part of sasutils).'
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('-d', '--debug', action="store_true",
@@ -45,38 +46,51 @@ def main():
     group.add_argument('-c', '--carbon', action='store_true',
                        help='output SES Element descriptors metrics in a '
                             'format suitable for Carbon/Graphite')
+    group.add_argument('-s', '--status', action='store_true',
+                       help='output status found in SES Element descriptors')
 
     group = parser.add_argument_group('carbon options')
-    group.add_argument("--carbon-prefix", action="store", default='sasutils',
+    group.add_argument("--prefix", action="store", default='sasutils',
                        help='carbon prefix (example: "datacenter.cluster",'
                             ' default is "sasutils")')
-    pargs = parser.parse_args()
+    return parser.parse_args()
 
+def main():
+    """console_scripts entry point for the ses_report command-line."""
+    pargs = _init_argparser()
     if pargs.debug:
         # debugging on the same stream is recommended (stdout)
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
-    carbon_pfx = pargs.carbon_prefix.strip('.')
-    if carbon_pfx:
-        carbon_pfx += '.'
+    pfx = pargs.prefix.strip('.')
+    if pfx:
+        pfx += '.'
 
     for node in sysfs.node('class').node('sas_expander'):
         expander = SASExpander(node.node('device'))
         for end_device in expander.end_devices_by_scsi_type(TYPE_ENCLOSURE):
             # Get enclosure SG device
             sg_dev = end_device.scsi_device.scsi_generic
+
             # Resolve SES enclosure nickname
             snic = ses_get_snic_nickname(sg_dev.name).replace(' ', '_')
             if not snic:
                 # Use Vendor + SAS address if SES encl. nickname not defined
                 snic = end_device.scsi_device.attrs.vendor.replace(' ', '-')
                 snic += '_' + end_device.scsi_device.attrs.sas_address
-            time_now = time.time()
-            for edinfo in ses_get_ed_metrics(sg_dev.name):
-                # Print output using Carbon format
-                carbon_fmt = '{element_type}.{descriptor}.{key}_{unit} {value}'
-                carbon_path = carbon_fmt.format(**edinfo.asdict())
-                print('%s%s.%s %d' % (carbon_pfx, snic, carbon_path, time_now))
+
+            if pargs.carbon:
+                time_now = time.time()
+                for edinfo in ses_get_ed_metrics(sg_dev.name):
+                    # Print output using Carbon format
+                    fmt = '{element_type}.{descriptor}.{key}_{unit} {value}'
+                    path = fmt.format(**edinfo)
+                    print('%s%s.%s %d' % (pfx, snic, path, time_now))
+            else:
+                for edstatus in ses_get_ed_status(sg_dev.name):
+                    fmt = '{element_type}.{descriptor} {status}'
+                    output = fmt.format(**edstatus)
+                    print('%s%s.%s' % (pfx, snic, output))
 
 
 if __name__ == '__main__':
