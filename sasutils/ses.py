@@ -17,7 +17,7 @@
 
 """SES utilities
 
-Requires sg_ses from sg3_utils.
+Requires sg_ses from sg3_utils (recent version, like 1.77).
 """
 
 __author__ = 'sthiell@stanford.edu (Stephane Thiell)'
@@ -35,10 +35,15 @@ def ses_get_snic_nickname(sg_devname):
     # SES nickname is not available through sysfs, use sg_ses tool instead
     cmdargs = ['sg_ses', '--page=snic', '-I0', '/dev/' + sg_devname]
     LOGGER.debug('ses_get_snic_nickname: executing: %s', cmdargs)
-    stdout = subprocess.Popen(cmdargs,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE).communicate()[0]
+    stdout, stderr = subprocess.Popen(cmdargs,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE).communicate()
+
+    for line in stderr.splitlines():
+        LOGGER.debug('ses_get_snic_nickname: sg_ses(stderr): %s', line)
+
     for line in stdout.splitlines():
+        LOGGER.debug('ses_get_snic_nickname: sg_ses: %s', line)
         mobj = re.match(r'\s+nickname:\s*([^ ]+)', line)
         if mobj:
             return mobj.group(1)
@@ -47,14 +52,19 @@ def _ses_get_ed_line(sg_devname):
     """Helper function to get element descriptor associated lines."""
     cmdargs = ['sg_ses', '--page=ed', '--join', '/dev/' + sg_devname]
     LOGGER.debug('ses_get_ed_metrics: executing: %s', cmdargs)
-    stdout = subprocess.Popen(cmdargs,
-                              stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE).communicate()[0]
+    stdout, stderr = subprocess.Popen(cmdargs,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE).communicate()
+
+    for line in stderr.splitlines():
+        LOGGER.debug('ses_get_ed_metrics: sg_ses(stderr): %s', line)
+
     element_type = None
     descriptor = None
+
     for line in stdout.splitlines():
         LOGGER.debug('ses_get_ed_metrics: sg_ses: %s', line)
-        if line[0] != ' ' and 'Element type:' in line:
+        if line and line[0] != ' ' and 'Element type:' in line:
             # Voltage  3.30V [6,0]  Element type: Voltage sensor
             mobj = re.search(r'([^\[]+)\[.*\][\s,]*Element type:\s*(.+)', line)
             if mobj:
