@@ -1,5 +1,5 @@
-sasutils is a set of tools and a Python library to ease the administration of
-complex SAS fabrics.
+sasutils is a set of command-line tools and a Python library to ease the
+administration of Serial Attached SCSI (SAS) fabrics.
 
 .. image:: https://img.shields.io/pypi/v/sasutils.svg
     :target: https://pypi.python.org/pypi/sasutils/
@@ -12,8 +12,16 @@ complex SAS fabrics.
     :target: https://pypi.python.org/pypi/sasutils/
     :alt: License
 
-Example usage
--------------
+CLI tools
+---------
+
+* sas_devices
+* sas_discover
+* ses_report
+
+
+Example usage (Python)
+----------------------
 
 * the following example will list all SAS expanders found in sysfs
 
