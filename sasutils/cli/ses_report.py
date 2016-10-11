@@ -73,8 +73,10 @@ def main():
             sg_dev = end_device.scsi_device.scsi_generic
 
             # Resolve SES enclosure nickname
-            snic = ses_get_snic_nickname(sg_dev.name).replace(' ', '_')
-            if not snic:
+            snic = ses_get_snic_nickname(sg_dev.name)
+            if snic:
+                snic = snic.replace(' ', '_')
+            else:
                 # Use Vendor + SAS address if SES encl. nickname not defined
                 snic = end_device.scsi_device.attrs.vendor.replace(' ', '-')
                 snic += '_' + end_device.scsi_device.attrs.sas_address
