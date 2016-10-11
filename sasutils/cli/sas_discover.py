@@ -85,9 +85,9 @@ class SASDiscoverCLI(object):
 
             info_fmt = []
             if self.args.verbose > 1:
-                info_fmt += ['board: {board_name} {board_assembly} {board_tracer}',
-                             'product: {version_product}', 'bios: {version_bios}',
-                             'fw: {version_fw}']
+                info_fmt += ['board: {board_name} {board_assembly} '
+                             '{board_tracer}', 'product: {version_product}',
+                             'bios: {version_bios}', 'fw: {version_fw}']
             elif self.args.verbose > 0:
                 info_fmt.append('{board_name}')
             if self.args.addr:

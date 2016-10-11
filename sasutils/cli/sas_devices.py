@@ -20,7 +20,8 @@
 from __future__ import print_function
 import argparse
 from collections import namedtuple
-from itertools import ifilter
+from itertools import ifilter, groupby
+from operator import attrgetter
 import socket
 import sys
 
@@ -64,12 +65,19 @@ class SASDevicesCLI(object):
         for expander in sysfsnode:
             sas_expanders.append(SASExpander(expander.node('device')))
 
-        msgstr = "Found %d SAS expanders" % len(sas_expanders)
-        if self.args.verbose:
-            print("%s: %s" % (msgstr,
-                              ','.join(exp.name for exp in sas_expanders)))
-        else:
-            print(msgstr)
+        # Find unique expander thanks to their sas_address
+        attrname = 'sas_device.attrs.sas_address'
+        # Sort the expander list before using groupby()
+        sas_expanders = sorted(sas_expanders, key=attrgetter(attrname))
+        # Group expanders by SAS address
+        num_exp = 0
+        for addr, expgroup in groupby(sas_expanders, attrgetter(attrname)):
+            if self.args.verbose:
+                exps = list(expgroup)
+                explist = ','.join(exp.name for exp in exps)
+                print('SAS expander %s x%d (%s)' % (addr, len(exps), explist))
+            num_exp += 1
+        print("Found %d SAS expanders" % num_exp)
 
     def _get_dev_attrs(self, sas_end_device, with_sn=True):
         res = {}
@@ -191,8 +199,8 @@ class SASDevicesCLI(object):
 
             if self.args.verbose:
                 print(self.FMT_DEVLIST_VERB.format(**self.HDR_DEVLIST_VERB))
-                for lu, devlist in sorted(encdevs, key=lambda o:
-                        int(o[1][0].sas_device.attrs.bay_identifier)):
+                for lu, devlist in sorted(encdevs,
+                        key=lambda o: int(o[1][0].sas_device.attrs.bay_identifier)):
                     self._print_lu_devlist(lu, devlist, maxpaths)
                     cnt += 1
             else:
