@@ -23,28 +23,25 @@ CLI tools
 Example usage (Python)
 ----------------------
 
-* the following example will list all SAS expanders found in sysfs
+* the following example will list all SAS hosts (controllers) found in sysfs
 
     .. code-block:: python
 
-        from sasutils.sas import SASExpander
+        from sasutils.sas import SASHost
         from sasutils.sysfs import sysfs
 
         # sysfs is a helper to walk through sysfs (/sys)
-        for node in sysfs.node('class').node('sas_expander'):
+        for node in sysfs.node('class').node('sas_host'):
 
-            # Instantiate SASExpander with the sas_expander sysfs device class
-            expander = SASExpander(node.node('device'))
+            # Instantiate SASHost with the sas_host sysfs device class
+            host = SASHost(node.node('device'))
 
             # To get its sysfs name, use:
-            print(expander.name)
-            # To access its attributes, use:
-            print('  %s' % expander.attrs.product_id)
-            # To get attributes from the sas_device sysfs class, use:
-            print('  %s' % expander.sas_device.attrs.sas_address)
+            print(host.name)
+            # To get attributes from scsi_host, use:
+            print('  %s' % host.scsi_host.attrs.host_sas_address)
+            print('  %s' % host.scsi_host.attrs.version_fw)
 
+* See also https://github.com/stanford-rc/sasutils/wiki/Code-snippets
 
 :Author: Stephane Thiell
-
-.. _Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0
-
