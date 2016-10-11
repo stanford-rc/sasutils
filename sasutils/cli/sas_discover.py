@@ -23,6 +23,7 @@ import socket
 
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
+from sasutils.scsi import TYPE_MAP
 from sasutils.sysfs import sysfs
 
 #
@@ -66,7 +67,10 @@ class SASDiscoverCLI(object):
 
     def __init__(self):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--verbose', '-v', action='count')
+        parser.add_argument('--verbose', '-v', action='count', default=0,
+                            help='Verbosity level, repeat multiple times!')
+        parser.add_argument('--addr', action='store_true', default=False,
+                            help='Print SAS addresses')
         self.args = parser.parse_args()
 
     def print_hosts(self, sysfsnode, prinfo):
@@ -79,10 +83,14 @@ class SASDiscoverCLI(object):
 
             sas_host = SASHost(sas_host.node('device'))
 
-            info_fmt = ['board: {board_name} {board_assembly} {board_tracer}',
-                        'product: {version_product}', 'bios: {version_bios}',
-                        'fw: {version_fw}']
+            info_fmt = []
             if self.args.verbose > 1:
+                info_fmt += ['board: {board_name} {board_assembly} {board_tracer}',
+                             'product: {version_product}', 'bios: {version_bios}',
+                             'fw: {version_fw}']
+            elif self.args.verbose > 0:
+                info_fmt.append('{board_name}')
+            if self.args.addr:
                 info_fmt.append('addr: {host_sas_address}')
 
             ikeys = ('board_name', 'board_assembly', 'board_tracer',
@@ -91,8 +99,8 @@ class SASDiscoverCLI(object):
 
             iargs = dict((k, sas_host.scsi_host.attrs[k]) for k in ikeys)
 
-            print('%s%s: %s' % (prompt, sas_host.name,
-                                ', '.join(info_fmt).format(**iargs)))
+            print('%s%s %s' % (prompt, sas_host.name,
+                               ', '.join(info_fmt).format(**iargs)))
 
             num_ports = len(sas_host.ports)
             for index, port in enumerate(sas_host.ports):
@@ -104,16 +112,21 @@ class SASDiscoverCLI(object):
     def print_expanders(self, port, prinfo):
         prompt = gen_prompt(prinfo)
         for expander in port.expanders:
-            exp_info = format_attrs((('vendor', 'vendor_id'),
-                                     ('product', 'product_id'),
-                                     ('rev', 'product_rev')),
-                                    expander.attrs)
+            if self.args.verbose > 1:
+                exp_info = format_attrs((('vendor', 'vendor_id'),
+                                         ('product', 'product_id'),
+                                         ('rev', 'product_rev')),
+                                        expander.attrs)
+            elif self.args.verbose > 0:
+                exp_info = expander.attrs['vendor_id']
+            else:
+                exp_info = ''
 
             linkinfo = '-%dx--' % len(port.phys)
 
             dev_info = ''
 
-            if self.args.verbose > 1:
+            if self.args.addr:
                 dev_info = format_attrs((('addr', 'sas_address'),),
                                         expander.sas_device.attrs)
             print('%s%s%s %s %s' % (prompt, linkinfo, expander.name,
@@ -133,7 +146,7 @@ class SASDiscoverCLI(object):
                 exp_blkdevs += blkdevs
             if exp_blkdevs:
                 prompt = gen_prompt(adv_prompt(prinfo, poff, True))
-                print('%s %d block devices (use -v for details)'
+                print('%s %d block devices (use -vv for details)'
                       % (prompt, len(exp_blkdevs)))
 
     def print_devices(self, port, prinfo):
@@ -146,18 +159,28 @@ class SASDiscoverCLI(object):
         blkdevs = []
 
         for end_device in port.end_devices:
-            dev_info_fmt = ['vendor: {vendor}', 'model: {model}', 'rev: {rev}']
+            dev_info_fmt = []
+            if self.args.verbose == 1:
+                dev_info_fmt.append('{vendor}')
+            elif self.args.verbose > 1:
+                dev_info_fmt.append('vendor: {vendor}')
             if self.args.verbose > 1:
+                dev_info_fmt += ['model: {model}', 'rev: {rev}']
+            if self.args.addr:
                 dev_info_fmt.append('addr: {sas_address}')
 
             ikeys = ('vendor', 'model', 'rev', 'sas_address')
             iargs = dict((k, end_device.scsi_device.attrs[k]) for k in ikeys)
             dev_info = ', '.join(dev_info_fmt).format(**iargs)
 
+            unknown_type = 'unknown(%s)' % end_device.scsi_device.attrs.type
+            dev_type = TYPE_MAP.get(int(end_device.scsi_device.attrs.type),
+                                    unknown_type)
+
             if end_device.scsi_device.block:
                 block = end_device.scsi_device.block
 
-                if not self.args.verbose:
+                if self.args.verbose < 2:
                     blkdevs.append(block)
                     continue
 
@@ -167,15 +190,15 @@ class SASDiscoverCLI(object):
                 else:
                     blk_info = "size %.1fGB" % (size / 1e9)
                 #print(dict(end_device.scsi_device.block.queue.attrs))
-                print('%s%s%s %s %s' % (prompt, linkinfo, end_device.name,
-                                        dev_info, blk_info))
+                print('%s%s%s %s %s %s' % (prompt, linkinfo, end_device.name,
+                                           dev_type, dev_info, blk_info))
             else:
                 sg = end_device.scsi_device.scsi_generic
                 snic = ses_get_snic_nickname(sg.name)
                 if snic:
-                    dev_info += ', snic: %s' % snic
-                print('%s%s%s %s' % (prompt, linkinfo, end_device.name,
-                                     dev_info))
+                    dev_type += ' %s' % snic
+                print('%s%s%s %s %s' % (prompt, linkinfo, end_device.name,
+                                        dev_type, dev_info))
 
         return blkdevs
 
