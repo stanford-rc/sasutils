@@ -28,8 +28,7 @@ import logging
 import time
 import sys
 
-from sasutils.sas import SASExpander
-from sasutils.scsi import TYPE_ENCLOSURE
+from sasutils.scsi import EnclosureDevice
 from sasutils.ses import ses_get_ed_metrics, ses_get_ed_status
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
@@ -66,33 +65,33 @@ def main():
     if pfx:
         pfx += '.'
 
-    for node in sysfs.node('class').node('sas_expander'):
-        expander = SASExpander(node.node('device'))
-        for end_device in expander.end_devices_by_scsi_type(TYPE_ENCLOSURE):
-            # Get enclosure SG device
-            sg_dev = end_device.scsi_device.scsi_generic
+    # Iterate over sysfs SCSI enclosures
+    for node in sysfs.node('class').node('enclosure'):
+        # Get enclosure device
+        enclosure = EnclosureDevice(node.node('device'))
+        # Get enclosure SG device
+        sg_dev = enclosure.scsi_generic
+        # Resolve SES enclosure nickname
+        snic = ses_get_snic_nickname(sg_dev.name)
+        if snic:
+            snic = snic.replace(' ', '_')
+        else:
+            # Use Vendor + SAS address if SES encl. nickname not defined
+            snic = enclosure.attrs.vendor.replace(' ', '-')
+            snic += '_' + enclosure.attrs.sas_address
 
-            # Resolve SES enclosure nickname
-            snic = ses_get_snic_nickname(sg_dev.name)
-            if snic:
-                snic = snic.replace(' ', '_')
-            else:
-                # Use Vendor + SAS address if SES encl. nickname not defined
-                snic = end_device.scsi_device.attrs.vendor.replace(' ', '-')
-                snic += '_' + end_device.scsi_device.attrs.sas_address
-
-            if pargs.carbon:
-                time_now = time.time()
-                for edinfo in ses_get_ed_metrics(sg_dev.name):
-                    # Print output using Carbon format
-                    fmt = '{element_type}.{descriptor}.{key}_{unit} {value}'
-                    path = fmt.format(**edinfo)
-                    print('%s%s.%s %d' % (pfx, snic, path, time_now))
-            else:
-                for edstatus in ses_get_ed_status(sg_dev.name):
-                    fmt = '{element_type}.{descriptor} {status}'
-                    output = fmt.format(**edstatus)
-                    print('%s%s.%s' % (pfx, snic, output))
+        if pargs.carbon:
+            time_now = time.time()
+            for edinfo in ses_get_ed_metrics(sg_dev.name):
+                # Print output using Carbon format
+                fmt = '{element_type}.{descriptor}.{key}_{unit} {value}'
+                path = fmt.format(**edinfo)
+                print('%s%s.%s %d' % (pfx, snic, path, time_now))
+        else:
+            for edstatus in ses_get_ed_status(sg_dev.name):
+                fmt = '{element_type}.{descriptor} {status}'
+                output = fmt.format(**edstatus)
+                print('%s%s.%s' % (pfx, snic, output))
 
 
 if __name__ == '__main__':
