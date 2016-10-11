@@ -38,6 +38,21 @@ TYPE_RBC = 0x0e
 TYPE_OSD = 0x11
 TYPE_NO_LUN = 0x7f
 
+TYPE_MAP = {TYPE_DISK: 'disk',
+            TYPE_TAPE: 'tape',
+            TYPE_PRINTER: 'printer',
+            TYPE_PROCESSOR: 'processor',
+            TYPE_WORM: 'worm',
+            TYPE_ROM: 'rom',
+            TYPE_SCANNER: 'scanner',
+            TYPE_MOD: 'mod',
+            TYPE_MEDIUM_CHANGER: 'medium_changer',
+            TYPE_COMM: 'comm',
+            TYPE_RAID: 'raid',
+            TYPE_ENCLOSURE: 'enclosure',
+            TYPE_RBC: 'rbc',
+            TYPE_OSD: 'osd',
+            TYPE_NO_LUN: 'no_lun'}
 
 #
 # SCSI classes
