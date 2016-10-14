@@ -46,6 +46,7 @@ setup(name='sasutils',
             'console_scripts': [
                 'sas_devices=sasutils.cli.sas_devices:main',
                 'sas_discover=sasutils.cli.sas_discover:main',
+                'sas_mpath_snic_alias=sasutils.cli.sas_mpath_snic_alias:main',
                 'sas_sd_snic_alias=sasutils.cli.sas_sd_snic_alias:main',
                 'ses_report=sasutils.cli.ses_report:main'
             ],
