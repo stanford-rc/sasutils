@@ -116,7 +116,7 @@ class SASDevicesCLI(object):
         info['lu'] = lu
         info['blkdevs'] = ','.join(dev.scsi_device.block.name
                                    for dev in devlist)
-        info['sgdevs'] = ','.join(dev.scsi_device.scsi_generic.sg_devname
+        info['sgdevs'] = ','.join(dev.scsi_device.scsi_generic.sg_name
                                   for dev in devlist)
 
         # Number of paths

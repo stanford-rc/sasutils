@@ -66,8 +66,8 @@ def sas_mpath_snic_alias(dmdev):
         # Check for orphan device
         if blkdev.array_device:
 
-            # Use array_device and enclosure to retrieve the ses sg device
-            ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_devname
+            # Use array_device and enclosure to retrieve the ses sg name
+            ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
 
             # Get subenclosure nickname
             snic = ses_get_snic_nickname(ses_sg)

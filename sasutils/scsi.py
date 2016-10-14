@@ -74,7 +74,7 @@ class SCSIGeneric(SysfsDevice):
     def __init__(self, device, subsys='scsi_generic'):
         SysfsDevice.__init__(self, device, subsys)
         # the basename of self.sysfsnode is the name of the sg device
-        self.sg_devname = str(self.sysfsnode)
+        self.sg_name = str(self.sysfsnode)
 
 class SCSIDevice(SysfsObject):
 

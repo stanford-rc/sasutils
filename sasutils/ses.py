@@ -30,10 +30,10 @@ import subprocess
 LOGGER = logging.getLogger(__name__)
 
 
-def ses_get_snic_nickname(sg_devname):
+def ses_get_snic_nickname(sg_name):
     """Get subenclosure nickname (SES-2) [snic]"""
     # SES nickname is not available through sysfs, use sg_ses tool instead
-    cmdargs = ['sg_ses', '--page=snic', '-I0', '/dev/' + sg_devname]
+    cmdargs = ['sg_ses', '--page=snic', '-I0', '/dev/' + sg_name]
     LOGGER.debug('ses_get_snic_nickname: executing: %s', cmdargs)
     stdout, stderr = subprocess.Popen(cmdargs,
                                       stdout=subprocess.PIPE,
@@ -48,9 +48,9 @@ def ses_get_snic_nickname(sg_devname):
         if mobj:
             return mobj.group(1)
 
-def _ses_get_ed_line(sg_devname):
+def _ses_get_ed_line(sg_name):
     """Helper function to get element descriptor associated lines."""
-    cmdargs = ['sg_ses', '--page=ed', '--join', '/dev/' + sg_devname]
+    cmdargs = ['sg_ses', '--page=ed', '--join', '/dev/' + sg_name]
     LOGGER.debug('ses_get_ed_metrics: executing: %s', cmdargs)
     stdout, stderr = subprocess.Popen(cmdargs,
                                       stdout=subprocess.PIPE,
@@ -74,12 +74,12 @@ def _ses_get_ed_line(sg_devname):
         else:
             yield element_type, descriptor, line.strip()
 
-def ses_get_ed_metrics(sg_devname):
+def ses_get_ed_metrics(sg_name):
     """
     Return environment metrics as a dictionary from the SES Element
     Descriptor page.
     """
-    for element_type, descriptor, line in _ses_get_ed_line(sg_devname):
+    for element_type, descriptor, line in _ses_get_ed_line(sg_name):
         # Look for environment metrics
         mobj = re.search(r'(\w+)[:=]\s*([-+]*[0-9]+(\.[0-9]+)?)\s+(\w+)', line)
         if mobj:
@@ -88,12 +88,12 @@ def ses_get_ed_metrics(sg_devname):
                         ('descriptor', descriptor), ('key', key),
                         ('value', value), ('unit', unit)))
 
-def ses_get_ed_status(sg_devname):
+def ses_get_ed_status(sg_name):
     """
     Return different status code as a dictionary from the SES Element
     Descriptor page.
     """
-    for element_type, descriptor, line in _ses_get_ed_line(sg_devname):
+    for element_type, descriptor, line in _ses_get_ed_line(sg_name):
         # Look for status info
         mobj = re.search(r'status:\s*(.+)', line)
         if mobj:

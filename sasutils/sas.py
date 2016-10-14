@@ -86,7 +86,6 @@ class SASNode(SysfsDevice):
                 if int(end_device.scsi_device.attrs.type) == int(device_type):
                     yield end_device
 
-
 class SASHost(SASNode):
 
     def __init__(self, device, subsys='sas_host'):

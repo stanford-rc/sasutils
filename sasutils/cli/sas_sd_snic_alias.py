@@ -51,11 +51,13 @@ def sas_sd_snic_alias(blkdev):
     # Check for orphan device
     if blkdev.array_device:
 
-        # Use links to array_device and enclosure to retrieve the ses sg device
-        ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_devname
+        # Use links to array_device and enclosure to retrieve the ses sg name
+        ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
 
         # Get subenclosure nickname
         snic = ses_get_snic_nickname(ses_sg)
+    else:
+        print(blkdev.sysfsnode.path)
 
     return ALIAS_FORMAT.format(nickname=snic, bay_identifier=bay)
 
