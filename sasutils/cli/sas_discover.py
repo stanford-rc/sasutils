@@ -24,7 +24,7 @@ import sys
 
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
-from sasutils.scsi import TYPE_MAP, TYPE_ENCLOSURE
+from sasutils.scsi import MAP_TYPES, TYPE_ENCLOSURE
 from sasutils.sysfs import sysfs
 
 #
@@ -153,8 +153,8 @@ class SASDiscoverCLI(object):
                     exp_scsi_devs[devtype].extend(devlist)
 
             for index, scsi_type in enumerate(exp_scsi_devs):
-                devtypestr = '[%s]' % TYPE_MAP.get(scsi_type,
-                                                   'unknown(%s)' % scsi_type)
+                devtypestr = '[%s]' % MAP_TYPES.get(scsi_type,
+                                                    'unknown(%s)' % scsi_type)
                 devcnt = len(exp_scsi_devs[scsi_type])
 
                 if index == len(exp_scsi_devs) - 1:
@@ -216,8 +216,8 @@ class SASDiscoverCLI(object):
                 dev_info = ', '.join(dev_info_fmt).format(**iargs)
 
                 unknown_type = 'unknown(%s)' % end_device.scsi_device.attrs.type
-                dev_type = TYPE_MAP.get(int(end_device.scsi_device.attrs.type),
-                                        unknown_type)
+                dev_type = MAP_TYPES.get(int(end_device.scsi_device.attrs.type),
+                                         unknown_type)
 
                 if end_device.scsi_device.block:
                     block = end_device.scsi_device.block
