@@ -20,6 +20,7 @@
 from __future__ import print_function
 import argparse
 import socket
+import sys
 
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
@@ -207,9 +208,13 @@ def main():
     # print short hostname as tree root node
     print(socket.gethostname().split('.')[0])
 
-    # start from /sys/class/sas_host
-    root = sysfs.node('class').node('sas_host')
-    SASDiscoverCLI().print_hosts(root, adv_prompt([]))
+    try:
+        # start from /sys/class/sas_host
+        root = sysfs.node('class').node('sas_host')
+        SASDiscoverCLI().print_hosts(root, adv_prompt([]))
+    except KeyError as exc:
+        print('Error: %s not found' % exc, file=sys.stderr)
+
 
 if __name__ == '__main__':
     main()
