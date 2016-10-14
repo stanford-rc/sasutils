@@ -24,7 +24,7 @@ import sys
 
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
-from sasutils.scsi import TYPE_MAP
+from sasutils.scsi import TYPE_MAP, TYPE_ENCLOSURE
 from sasutils.sysfs import sysfs
 
 #
@@ -133,22 +133,54 @@ class SASDiscoverCLI(object):
             print('%s%s%s %s %s' % (prompt, linkinfo, expander.name,
                                     exp_info, dev_info))
 
-            exp_blkdevs = []
-
+            exp_scsi_devs = {}
             poff = len(linkinfo)
             num_ports = len(expander.ports)
+
             for index, port in enumerate(expander.ports):
-                if index == num_ports - 1 and not exp_blkdevs:
+
+                if index == num_ports - 1 and not exp_scsi_devs:
                     self.print_expanders(port, adv_prompt(prinfo, poff, True))
-                    blkdevs = self.print_devices(port, adv_prompt(prinfo, poff, True))
+                    scsi_devs = self.print_devices(port, adv_prompt(prinfo,
+                                                                    poff, True))
                 else:
                     self.print_expanders(port, adv_prompt(prinfo, poff))
-                    blkdevs = self.print_devices(port, adv_prompt(prinfo, poff))
-                exp_blkdevs += blkdevs
-            if exp_blkdevs:
-                prompt = gen_prompt(adv_prompt(prinfo, poff, True))
-                print('%s %d block devices (use -vv for details)'
-                      % (prompt, len(exp_blkdevs)))
+                    scsi_devs = self.print_devices(port, adv_prompt(prinfo,
+                                                                    poff))
+                # merge scsi_devs dicts
+                for devtype, devlist in scsi_devs.items():
+                    exp_scsi_devs.setdefault(devtype, [])
+                    exp_scsi_devs[devtype].extend(devlist)
+
+            for index, scsi_type in enumerate(exp_scsi_devs):
+                devtypestr = '[%s]' % TYPE_MAP.get(scsi_type,
+                                                   'unknown(%s)' % scsi_type)
+                devcnt = len(exp_scsi_devs[scsi_type])
+
+                if index == len(exp_scsi_devs) - 1:
+                    prompt = gen_prompt(adv_prompt(prinfo, poff, True))
+                else:
+                    prompt = gen_prompt(adv_prompt(prinfo, poff, False))
+
+                if devcnt == 1:
+                    linkspeed = exp_scsi_devs[scsi_type][0][0]
+                    sas_device = exp_scsi_devs[scsi_type][0][1]
+
+                    if self.args.verbose > 0 and scsi_type == TYPE_ENCLOSURE:
+                        sg = sas_device.scsi_device.scsi_generic
+                        snic = ses_get_snic_nickname(sg.name)
+                        if snic:
+                            devtypestr += ' %s' % snic
+                    print('%s%s %s' % (prompt, '-%dx--%s' % (linkspeed,
+                                                             sas_device.name),
+                                       devtypestr))
+                else:
+                    scsi_devinfo = exp_scsi_devs[scsi_type]
+                    linkspeed = sum(devinfo[0] for devinfo in scsi_devinfo)
+                    sas_device = scsi_devinfo[0][1].sas_device.attrs.device_type
+                    sas_device = sas_device.replace(' ', '_')
+                    print('%s%s%s %d x %s' % (prompt, '(%dx)-' % linkspeed,
+                                              sas_device, devcnt, devtypestr))
 
     def print_devices(self, port, prinfo):
         prompt = gen_prompt(prinfo)
@@ -157,51 +189,69 @@ class SASDiscoverCLI(object):
         if len(port.end_devices) > 1:
             print('warning len(port.end_devices) == %d' % len(port.end_devices))
 
-        blkdevs = []
+        # dict used to return bulk result for aggregated output
+        bulk_devtypes = {}
 
         for end_device in port.end_devices:
-            dev_info_fmt = []
-            if self.args.verbose == 1:
-                dev_info_fmt.append('{vendor}')
-            elif self.args.verbose > 1:
-                dev_info_fmt.append('vendor: {vendor}')
-            if self.args.verbose > 1:
-                dev_info_fmt += ['model: {model}', 'rev: {rev}']
-            if self.args.addr:
-                dev_info_fmt.append('addr: {sas_address}')
 
-            ikeys = ('vendor', 'model', 'rev', 'sas_address')
-            iargs = dict((k, end_device.scsi_device.attrs[k]) for k in ikeys)
-            dev_info = ', '.join(dev_info_fmt).format(**iargs)
-
-            unknown_type = 'unknown(%s)' % end_device.scsi_device.attrs.type
-            dev_type = TYPE_MAP.get(int(end_device.scsi_device.attrs.type),
-                                    unknown_type)
-
-            if end_device.scsi_device.block:
-                block = end_device.scsi_device.block
-
-                if self.args.verbose < 2:
-                    blkdevs.append(block)
-                    continue
-
-                size = block.sizebytes()
-                if size >= 1e12:
-                    blk_info = "size %.1fTB" % (size / 1e12)
-                else:
-                    blk_info = "size %.1fGB" % (size / 1e9)
-                #print(dict(end_device.scsi_device.block.queue.attrs))
-                print('%s%s%s %s %s %s' % (prompt, linkinfo, end_device.name,
-                                           dev_type, dev_info, blk_info))
+            if self.args.verbose < 2:
+                # Gathered mode (-v)
+                scsi_type = int(end_device.scsi_device.attrs.type)
+                bulk_devtypes.setdefault(scsi_type, [])
+                bulk_devtypes[scsi_type].append((len(port.phys), end_device))
             else:
-                sg = end_device.scsi_device.scsi_generic
-                snic = ses_get_snic_nickname(sg.name)
-                if snic:
-                    dev_type += ' %s' % snic
-                print('%s%s%s %s %s' % (prompt, linkinfo, end_device.name,
-                                        dev_type, dev_info))
+                # Verbose mode (-vv)
+                dev_info_fmt = []
+                if self.args.verbose == 1:
+                    dev_info_fmt.append('{vendor}')
+                elif self.args.verbose > 1:
+                    dev_info_fmt.append('vendor: {vendor}')
+                if self.args.verbose > 1:
+                    dev_info_fmt += ['model: {model}', 'rev: {rev}']
+                if self.args.addr:
+                    dev_info_fmt.append('addr: {sas_address}')
 
-        return blkdevs
+                ikeys = ('vendor', 'model', 'rev', 'sas_address')
+                iargs = dict((k, end_device.scsi_device.attrs[k]) for k in ikeys)
+                dev_info = ', '.join(dev_info_fmt).format(**iargs)
+
+                unknown_type = 'unknown(%s)' % end_device.scsi_device.attrs.type
+                dev_type = TYPE_MAP.get(int(end_device.scsi_device.attrs.type),
+                                        unknown_type)
+
+                if end_device.scsi_device.block:
+                    block = end_device.scsi_device.block
+
+                    size = block.sizebytes()
+                    if size >= 1e12:
+                        blk_info = "size %.1fTB" % (size / 1e12)
+                    else:
+                        blk_info = "size %.1fGB" % (size / 1e9)
+
+                    print('%s%s%s %s %s %s' % (prompt, linkinfo, end_device.name,
+                                               dev_type, dev_info, blk_info))
+
+                    if self.args.verbose > 2:
+                        # -vvv: print all queue attributes
+                        prompt = gen_prompt(adv_prompt(prinfo, len(linkinfo)))
+                        queue_attrs = end_device.scsi_device.block.queue.attrs
+                        for index, queue_attr in enumerate(queue_attrs):
+                            if index == len(queue_attrs) - 1:
+                                prompt = gen_prompt(adv_prompt(prinfo,
+                                                               len(linkinfo),
+                                                               True))
+                            value = queue_attrs[queue_attr]
+                            print('%s queue.%s: %s' % (prompt, queue_attr,
+                                                       value))
+                else:
+                    sg = end_device.scsi_device.scsi_generic
+                    snic = ses_get_snic_nickname(sg.name)
+                    if snic:
+                        dev_type += ' %s' % snic
+                    print('%s%s%s %s %s' % (prompt, linkinfo, end_device.name,
+                                            dev_type, dev_info))
+
+        return bulk_devtypes
 
 def main():
     """console_scripts entry point for sas_discover command-line."""
