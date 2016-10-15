@@ -27,6 +27,7 @@ KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
 """
 
 from __future__ import print_function
+import logging
 import sys
 
 from sasutils.sas import SASBlockDevice
@@ -46,18 +47,17 @@ def sas_sd_snic_alias(blkdev):
     # Retrieve bay_identifier from matching sas_device
     bay = int(blkdev.end_device.sas_device.attrs.bay_identifier)
 
-    snic = 'unknown_snic'
-
     # Check for orphan device
-    if blkdev.array_device:
+    if not blkdev.array_device:
+        logging.warning('%s not an array device (%s)', blkdev.name,
+                        blkdev.sysfsnode.path)
+        return
 
-        # Use links to array_device and enclosure to retrieve the ses sg name
-        ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+    # Use links to array_device and enclosure to retrieve the ses sg name
+    ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
 
-        # Get subenclosure nickname
-        snic = ses_get_snic_nickname(ses_sg)
-    else:
-        print(blkdev.sysfsnode.path)
+    # Get subenclosure nickname
+    snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % blkdev.name
 
     return ALIAS_FORMAT.format(nickname=snic, bay_identifier=bay)
 
@@ -67,7 +67,9 @@ def main():
         print('Usage: %s <blkdev>' % sys.argv[0], file=sys.stderr)
         sys.exit(1)
     try:
-        print(sas_sd_snic_alias(sys.argv[1]))
+        result = sas_sd_snic_alias(sys.argv[1])
+        if result:
+            print(result)
     except KeyError as err:
         print("Not found: {0}".format(err), file=sys.stderr)
         sys.exit(1)

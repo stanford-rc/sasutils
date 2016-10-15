@@ -61,8 +61,6 @@ def sas_mpath_snic_alias(dmdev):
         # Retrieve bay_identifier from matching sas_device
         bayids.append(int(blkdev.end_device.sas_device.attrs.bay_identifier))
 
-        snic = 'unknown_snic'
-
         # Check for orphan device
         if blkdev.array_device:
 
@@ -70,12 +68,16 @@ def sas_mpath_snic_alias(dmdev):
             ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
 
             # Get subenclosure nickname
-            snic = ses_get_snic_nickname(ses_sg)
+            snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % dmdev
         else:
             logging.warning('%s not an array device (%s)', blkdev.name,
                             blkdev.sysfsnode.path)
+            continue
 
         snics.append(snic)
+
+    if not bayids or not snics:
+        return
 
     # assert that bay ids are the same...
     bay = bayids[0]
@@ -92,7 +94,9 @@ def main():
         print('Usage: %s <dmdev>' % sys.argv[0], file=sys.stderr)
         sys.exit(1)
     try:
-        print(sas_mpath_snic_alias(sys.argv[1]))
+        result = sas_mpath_snic_alias(sys.argv[1])
+        if result:
+            print(result)
     except KeyError as err:
         print("Not found: {0}".format(err), file=sys.stderr)
         sys.exit(1)
