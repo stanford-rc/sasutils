@@ -36,7 +36,7 @@ from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 
 
-ALIAS_FORMAT = '{nickname}-bay{bay_identifier}'
+ALIAS_FORMAT = '{nickname}-bay{bay_identifier:02d}'
 
 
 def sas_mpath_snic_alias(dmdev):
