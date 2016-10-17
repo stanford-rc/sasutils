@@ -17,8 +17,14 @@
 # limitations under the License.
 
 from setuptools import setup, find_packages
+import sys
 
 VERSION = '0.1.7'
+
+REQUIRES = []
+
+if sys.version_info < (2, 7):
+    REQUIRES.append('argparse')
 
 setup(name='sasutils',
       version=VERSION,
@@ -37,18 +43,18 @@ setup(name='sasutils',
           'Intended Audience :: System Administrators',
           'Operating System :: POSIX :: Linux',
           'Programming Language :: Python',
-          'Programming Language :: Python',
           'Programming Language :: Python :: 2.6',
           'Programming Language :: Python :: 2.7',
           'Topic :: System :: Systems Administration'
       ],
-      entry_points = {
-            'console_scripts': [
-                'sas_devices=sasutils.cli.sas_devices:main',
-                'sas_discover=sasutils.cli.sas_discover:main',
-                'sas_mpath_snic_alias=sasutils.cli.sas_mpath_snic_alias:main',
-                'sas_sd_snic_alias=sasutils.cli.sas_sd_snic_alias:main',
-                'ses_report=sasutils.cli.ses_report:main'
-            ],
-      }
+      entry_points={
+          'console_scripts': [
+              'sas_devices=sasutils.cli.sas_devices:main',
+              'sas_discover=sasutils.cli.sas_discover:main',
+              'sas_mpath_snic_alias=sasutils.cli.sas_mpath_snic_alias:main',
+              'sas_sd_snic_alias=sasutils.cli.sas_sd_snic_alias:main',
+              'ses_report=sasutils.cli.ses_report:main'
+          ],
+      },
+      install_requires=REQUIRES,
      )
