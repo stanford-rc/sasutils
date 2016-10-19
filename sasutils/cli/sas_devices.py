@@ -22,7 +22,6 @@ import argparse
 from collections import namedtuple
 from itertools import ifilter, groupby
 from operator import attrgetter
-import socket
 import sys
 
 from sasutils.sas import SASHost, SASExpander, SASEndDevice
@@ -79,16 +78,16 @@ class SASDevicesCLI(object):
             num_exp += 1
         print("Found %d SAS expanders" % num_exp)
 
-    def _get_dev_attrs(self, sas_end_device, with_sn=True):
+    def _get_dev_attrs(self, sas_end_device, scsi_device, with_sn=True):
         res = {}
 
         # Vendor info
-        res['vendor'] = sas_end_device.scsi_device.attrs.vendor
-        res['model'] = sas_end_device.scsi_device.attrs.model
-        res['rev'] = sas_end_device.scsi_device.attrs.rev
+        res['vendor'] = scsi_device.attrs.vendor
+        res['model'] = scsi_device.attrs.model
+        res['rev'] = scsi_device.attrs.rev
 
         # Size of block device
-        blk_sz = sas_end_device.scsi_device.block.sizebytes()
+        blk_sz = scsi_device.block.sizebytes()
         if blk_sz >= 1e12:
             blk_sz_info = "%.1fTB" % (blk_sz / 1e12)
         else:
@@ -97,10 +96,12 @@ class SASDevicesCLI(object):
 
         if with_sn:
             # Bay identifier
-            res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
+            try:
+                res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
+            except ValueError:
+                pass
 
             # Serial number
-            scsi_device = sas_end_device.scsi_device
             try:
                 pg80 = scsi_device.attrs.vpd_pg80
                 res['pg80'] = pg80[4:]
@@ -112,44 +113,47 @@ class SASDevicesCLI(object):
 
     def _print_lu_devlist(self, lu, devlist, maxpaths=None):
         # use the first device for the following common attributes
-        info = self._get_dev_attrs(devlist[0])
+        info = self._get_dev_attrs(*devlist[0])
+
         info['lu'] = lu
-        info['blkdevs'] = ','.join(dev.scsi_device.block.name
-                                   for dev in devlist)
-        info['sgdevs'] = ','.join(dev.scsi_device.scsi_generic.sg_name
-                                  for dev in devlist)
+        info['blkdevs'] = ','.join(scsi_device.block.name
+                                   for sas, scsi_device in devlist)
+        info['sgdevs'] = ','.join(scsi_device.scsi_generic.sg_name
+                                  for sas, scsi_device in devlist)
 
         # Number of paths
         paths = "%d" % len(devlist)
         if maxpaths and len(devlist) < maxpaths:
             paths += "*"
         info['paths'] = paths
-
+        info.setdefault('bay', '-')
         print(self.FMT_DEVLIST_VERB.format(**info))
 
     def print_end_devices(self, sysfsnode):
 
-        devmap = {} # LU -> list of SASEndDevice
+        devmap = {} # LU -> list of (SASEndDevice, SCSIDevice)
 
         for node in sysfsnode:
             sas_end_device = SASEndDevice(node.node('device'))
 
-            scsi_device = sas_end_device.scsi_device
-            if scsi_device.block:
-                try:
-                    pg83 = bytes(scsi_device.attrs.vpd_pg83)
-                    lu = vpd_decode_pg83_lu(pg83)
-                except AttributeError:
-                    lu = vpd_get_page83_lu(scsi_device.block.name)
+            for scsi_device in sas_end_device.targets:
+                if scsi_device.block:
+                    try:
+                        pg83 = bytes(scsi_device.attrs.vpd_pg83)
+                        lu = vpd_decode_pg83_lu(pg83)
+                    except AttributeError:
+                        lu = vpd_get_page83_lu(scsi_device.block.name)
 
-                devmap.setdefault(lu, []).append(sas_end_device)
+                    devmap.setdefault(lu, []).append((sas_end_device,
+                                                      scsi_device))
 
         # list of set of enclosure
         encgroups = []
         orphans = []
 
-        for lu, sas_ed_list in devmap.items():
-            blklist = [d.scsi_device.block for d in sas_ed_list]
+        for lu, dev_list in devmap.items():
+            blklist = [scsi_device.block for sas_ed, scsi_device in dev_list
+                       if scsi_device.block]
             for blk in blklist:
                 if blk.array_device is None:
                     print("Warning: no enclosure set for %s in %s" %
@@ -158,7 +162,7 @@ class SASDevicesCLI(object):
                        for blk in blklist
                        if blk.array_device is not None)
             if not encs:
-                orphans.append((lu, sas_ed_list))
+                orphans.append((lu, dev_list))
                 continue
             done = False
             for encset in encgroups:
@@ -180,16 +184,16 @@ class SASDevicesCLI(object):
                 if snic:
                     encinfolist.append('[%s]' % snic)
                 else:
-                    encinfolist.append('[%s %s, addr: %s]' % (enc.attrs.vendor,
-                                                              enc.attrs.model,
-                                                              enc.attrs.sas_address))
+                    vals = (enc.attrs.vendor, enc.attrs.model,
+                            enc.attrs.sas_address)
+                    encinfolist.append('[%s %s, addr: %s]' % vals)
 
             print("Enclosure group: %s" % ''.join(encinfolist))
 
             cnt = 0
 
-            def enclosure_finder((lu, sas_ed_list)):
-                for blk in (d.scsi_device.block for d in sas_ed_list):
+            def enclosure_finder((lu, dev_list)):
+                for blk in (dev.block for sas, dev in dev_list):
                     if blk.array_device and blk.array_device.enclosure in encset:
                         return True
                 return False
@@ -199,26 +203,29 @@ class SASDevicesCLI(object):
 
             if self.args.verbose:
                 print(self.FMT_DEVLIST_VERB.format(**self.HDR_DEVLIST_VERB))
-                for lu, devlist in sorted(encdevs,
-                        key=lambda o: int(o[1][0].sas_device.attrs.bay_identifier)):
+                kfun = lambda o: int(o[1][0][0].sas_device.attrs.bay_identifier)
+                for lu, devlist in sorted(encdevs, key=kfun):
                     self._print_lu_devlist(lu, devlist, maxpaths)
                     cnt += 1
             else:
                 folded = {}
                 for lu, devlist in encdevs:
                     # try to regroup disks by getting common attributes
-                    devinfo = self._get_dev_attrs(devlist[0], with_sn=False)
+                    devinfo = self._get_dev_attrs(*devlist[0], with_sn=False)
                     devinfo['paths'] = len(devlist)
-                    folded_key = namedtuple('FoldedDict', devinfo.keys())(**devinfo)
+                    folded_key = namedtuple('FoldedDict',
+                                            devinfo.keys())(**devinfo)
                     folded.setdefault(folded_key, []).append(devlist)
                     cnt += 1
-                print("NUM   %12s %12s %6s %6s"  % ('VENDOR', 'MODEL', 'REV', 'PATHS'))
+                print("NUM   %12s %12s %6s %6s"  % ('VENDOR', 'MODEL', 'REV',
+                                                    'PATHS'))
                 for t, v in folded.items():
                     if maxpaths and t.paths < maxpaths:
                         pathstr = '%s*' % t.paths
                     else:
                         pathstr = '%s ' % t.paths
-                    infostr = '{vendor:>12} {model:>12} {rev:>6} {paths:>6}'.format(**t._asdict())
+                    infofmt = '{vendor:>12} {model:>12} {rev:>6} {paths:>6}'
+                    infostr = infofmt.format(**t._asdict())
                     print('%3d x %s' % (len(v), infostr))
             print("Total: %d block devices in enclosure group" % cnt)
 

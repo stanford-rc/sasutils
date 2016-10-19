@@ -112,8 +112,8 @@ class SASEndDevice(SysfsDevice):
     def __init__(self, device, subsys='sas_end_device'):
         SysfsDevice.__init__(self, device, subsys)
         self.sas_device = SASDevice(device)
-        target = device.node('target*/*[0-9]')
-        self.scsi_device = SCSIDevice(target)
+        # a single SAS end device can handle several SCSI targets
+        self.targets = [SCSIDevice(dev) for dev in device.glob('target*/*[0-9]')]
 
 
 #
