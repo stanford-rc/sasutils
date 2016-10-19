@@ -26,24 +26,26 @@ Also, two "zeroconf" udev scripts for use in udev rules that create friendly dev
 sas_discover
 ------------
 
-Display SAS topology. By default, **sas_discover** tries to fold common devices (like disks). Use -v, -vv or -vvv to display more details.
+Display SAS topology. By default, **sas_discover** tries to fold common devices (like disks). Use ``-v``, ``-vv`` or ``-vvv`` and ``--addr`` to display more details.
 
     .. code-block::
 
         $ sas_discover -v
         oak-io1-s1
         |--host35 SAS9300-8e
-        |  `---8x--expander-35:0 ASTEK 
-        |          |---4x--expander-35:1 QCT 
-        |          |       |--(60x)-end_device 60 x [disk]
-        |          |       `---1x--end_device-35:1:60 [enclosure] io1-jbod1-0
-        |          `---1x--end_device-35:0:0 [enclosure] io1-sassw1
+        |  `--8x--expander-35:0 ASTEK
+        |         |--1x--end_device-35:0:0
+        |         |      `--enclosure io1-sassw1 ASTEK
+        |         `--4x--expander-35:1 QCT
+        |            |-- 60 x end_device -- disk
+        |            `--  1 x end_device -- enclosure io1-jbod1-0 QCT
         `--host36 SAS9300-8e
-           `---8x--expander-36:0 ASTEK 
-                   |---4x--expander-36:1 QCT 
-                   |       |--(60x)-end_device 60 x [disk]
-                   |       `---1x--end_device-36:1:60 [enclosure] io1-jbod1-1
-                   `---1x--end_device-36:0:0 [enclosure] io1-sassw2
+           `--8x--expander-36:0 ASTEK
+                  |--1x--end_device-36:0:0
+                  |      `--enclosure io1-sassw2 ASTEK
+                  `--4x--expander-36:1 QCT
+                     |-- 60 x end_device -- disk
+                     `--  1 x end_device -- enclosure io1-jbod1-1 QCT
 
 
 sas_devices

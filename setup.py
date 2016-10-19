@@ -19,7 +19,7 @@
 from setuptools import setup, find_packages
 import sys
 
-VERSION = '0.1.7'
+VERSION = '0.2.0'
 
 REQUIRES = []
 
