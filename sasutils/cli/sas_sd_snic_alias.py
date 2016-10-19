@@ -44,14 +44,14 @@ def sas_sd_snic_alias(blkdev):
     #   eg. /sys/block/sdx/device
     blkdev = SASBlockDevice(sysfs.node('block').node(blkdev).node('device'))
 
-    # Retrieve bay_identifier from matching sas_device
-    bay = int(blkdev.end_device.sas_device.attrs.bay_identifier)
-
     # Check for orphan device
     if not blkdev.array_device:
         logging.warning('%s not an array device (%s)', blkdev.name,
                         blkdev.sysfsnode.path)
         return
+
+    # Retrieve bay_identifier from matching sas_device
+    bay = int(blkdev.end_device.sas_device.attrs.bay_identifier)
 
     # Use links to array_device and enclosure to retrieve the ses sg name
     ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name

@@ -58,11 +58,11 @@ def sas_mpath_snic_alias(dmdev):
         # Instantiate a block device object with SAS attributes
         blkdev = SASBlockDevice(node.node('device'))
 
-        # Retrieve bay_identifier from matching sas_device
-        bayids.append(int(blkdev.end_device.sas_device.attrs.bay_identifier))
-
         # Check for orphan device
         if blkdev.array_device:
+
+            # Retrieve bay_identifier from matching sas_device
+            bayids.append(int(blkdev.end_device.sas_device.attrs.bay_identifier))
 
             # Use array_device and enclosure to retrieve the ses sg name
             ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
