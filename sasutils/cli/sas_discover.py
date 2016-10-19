@@ -39,14 +39,14 @@ def format_attrs(attrlist, attrs):
 class SDNode(object):
     gatherme = False
 
-    def __init__(self, name, baseobj, nphys=0, depth=0, disp=None, prinfo=[]):
+    def __init__(self, name, baseobj, nphys=0, depth=0, disp=None, prinfo=None):
         self.name = name
         self.baseobj = baseobj
         self.children = []
         self.nphys = nphys
         self.depth = depth
         self.disp = disp
-        self.prinfo = prinfo
+        self.prinfo = prinfo or []
         self.proffset = 0       # prompt offset; derived classes may override
         self._prompt = None
         self.resolve()
@@ -94,8 +94,11 @@ class SDNode(object):
             self._prompt = self.gen_prompt()
         return self._prompt
 
-    def add_child(self, sdclass, baseobj, nphys=0, last=False):
-        baseobjname = baseobj.name # mandatory
+    def add_child(self, sdclass, baseobj, name=None, nphys=0, last=False):
+        if not name:
+            baseobjname = baseobj.name # mandatory when name not provided
+        else:
+            baseobjname = name
         self.children.append(sdclass(baseobjname, baseobj, nphys,
                                      self.depth + 1, self.disp,
                                      self.adv_prompt(self.proffset, last)))
@@ -220,9 +223,9 @@ class SDEndDeviceNode(SDNode):
     def resolve(self):
         linkinfo = '%dx--' % self.nphys
         self.proffset = len(linkinfo)
-        for index, target in enumerate(self.baseobj.targets.values()):
-            last = bool(index == len(self.baseobj.targets.values()) - 1)
-            self.add_child(SDLeaf, target, last=last)
+        for index, target in enumerate(self.baseobj.targets):
+            last = bool(index == len(self.baseobj.targets) - 1)
+            self.add_child(SDSCSIDeviceNode, target, last=last)
 
     def __str__(self):
         verb = self.disp.get('verbose')
@@ -249,7 +252,9 @@ class SDEndDeviceNode(SDNode):
         return istr
 
 
-class SDLeaf(SDNode):
+class SDSCSIDeviceNode(SDNode):
+
+    # Note: additional instance attribute dinfo defined in resolve()
 
     @property
     def gatherme(self):
@@ -270,13 +275,17 @@ class SDLeaf(SDNode):
         except ValueError:
             return 'unknown'
 
-    def add_child(self, sdobj):
-        raise RuntimeError('SDLeaf object has no children')
+    def resolve(self):
+        verb = self.disp.get('verbose')
+        self.dinfo, qinfo = self.get_scsi_device_info(self.baseobj, verb > 2)
+        if qinfo:
+            # spawn optional "block queue" tree leaves
+            for index, (qattr, qval) in enumerate(qinfo.items()):
+                last = bool(index == len(qinfo) - 1)
+                self.add_child(SDBlockQueueNode, qval, name=qattr, last=last)
 
     def __str__(self):
-        dinfo, qinfo = self.get_scsi_device_info(self.baseobj, self.disp.get('verbose', 0) > 2)
-        return dinfo
-        #return '%s %d' % (self.baseobj.name, self.nphys)
+        return self.dinfo # defined in resolve()
 
     def get_scsi_device_info(self, scsi_device, want_queue_attrs=False):
         verb = self.disp.get('verbose')
@@ -325,6 +334,13 @@ class SDLeaf(SDNode):
                     dev_type += ' %s' % snic
 
         return "%s %s" % (dev_type, dev_info), {}
+
+
+class SDBlockQueueNode(SDNode):
+    gatherme = False
+
+    def __str__(self):
+        return 'queue.%s: %s' % (self.name, self.baseobj)
 
 
 def main():
