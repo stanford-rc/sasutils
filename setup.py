@@ -21,11 +21,6 @@ import sys
 
 VERSION = '0.2.1'
 
-REQUIRES = []
-
-if sys.version_info < (2, 7):
-    REQUIRES.append('argparse')
-
 setup(name='sasutils',
       version=VERSION,
       packages=find_packages(),
@@ -56,5 +51,4 @@ setup(name='sasutils',
               'ses_report=sasutils.cli.ses_report:main'
           ],
       },
-      install_requires=REQUIRES,
      )
