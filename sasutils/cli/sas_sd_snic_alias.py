@@ -42,9 +42,12 @@ ALIAS_FORMAT = '{nickname}-bay{bay_identifier:02d}'
 def sas_sd_snic_alias(blkdev):
     """Use sasutils library to get the alias name from the block device."""
 
-    # NOTE: Unfortunately, we cannot rely on sysfs block dev 'enclosure_device'
-    # symlink to the array device (at least not on 3.10.0-327.36.3.el7).
-    # We have to do the enclosure lookup ourselves as a workaround.
+    # NOTE: Unfortunately, we cannot always rely on sysfs block device
+    # 'enclosure_device' symlink to the array device (at least not on
+    # 3.10.0-327.36.3.el7). We have to do the enclosure lookup ourselves
+    # as a workaround.
+
+    # Preload enclosure dict (sas_address -> EnclosureDevice)
     enclosures = {}
     for encl in sysfs.node('class').node('enclosure'):
         encldev = EnclosureDevice(encl.node('device'))
@@ -55,17 +58,20 @@ def sas_sd_snic_alias(blkdev):
     blkdev = SASBlockDevice(sysfs.node('block').node(blkdev).node('device'))
     sasdev = blkdev.end_device.sas_device
 
-    # NOTE: we could use blkdev.array_device.enclosure.scsi_generic
-    # if sysfs enclosure_device worked properly (see NOTE above)
-    try:
-        encl = enclosures[sasdev.attrs.enclosure_identifier]
-    except KeyError:
-        # not an array device
-        logging.warning('%s not an array device (%s)', blkdev.name,
-                        blkdev.sysfsnode.path)
-        raise
-
-    ses_sg = encl.scsi_generic.sg_name
+    if blkdev.array_device:
+        # 'enclosure_device' symlink is present (preferred method)
+        # Use array_device and enclosure to retrieve the ses sg name
+        ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+    else:
+        # 'enclosure_device' symlink is absent: use workaround (see NOTE)
+        try:
+            encl = enclosures[sasdev.attrs.enclosure_identifier]
+            ses_sg = encl.scsi_generic.sg_name
+        except KeyError:
+            # not an array device
+            logging.warning('%s not an array device (%s)', blkdev.name,
+                            blkdev.sysfsnode.path)
+            raise
 
     # Retrieve bay_identifier from matching sas_device
     bay = int(sasdev.attrs.bay_identifier)

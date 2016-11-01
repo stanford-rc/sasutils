@@ -51,9 +51,12 @@ def sas_mpath_snic_alias(dmdev):
     #   sanity: check if the bay identifers are the same
     #   find common snic part and return result
 
-    # NOTE: Unfortunately, we cannot rely on sysfs block dev 'enclosure_device'
-    # symlink to the array device (at least not on 3.10.0-327.36.3.el7).
-    # We have to do the enclosure lookup ourselves as a workaround.
+    # NOTE: Unfortunately, we cannot always rely on sysfs block device
+    # 'enclosure_device' symlink to the array device (at least not on
+    # 3.10.0-327.36.3.el7). We have to do the enclosure lookup ourselves
+    # as a workaround.
+
+    # Preload enclosure dict (sas_address -> EnclosureDevice)
     enclosures = {}
     for encl in sysfs.node('class').node('enclosure'):
         encldev = EnclosureDevice(encl.node('device'))
@@ -69,24 +72,26 @@ def sas_mpath_snic_alias(dmdev):
         blkdev = SASBlockDevice(node.node('device'))
         sasdev = blkdev.end_device.sas_device
 
-        # NOTE: we could use blkdev.array_device.enclosure.scsi_generic
-        # if sysfs enclosure_device worked properly (see NOTE above)
-        try:
-            encl = enclosures[sasdev.attrs.enclosure_identifier]
-        except KeyError:
-            # not an array device
-            logging.warning('%s not an array device (%s)', blkdev.name,
-                            blkdev.sysfsnode.path)
-            continue
-
-        ses_sg = encl.scsi_generic.sg_name
+        if blkdev.array_device:
+            # 'enclosure_device' symlink is present (preferred method)
+            # Use array_device and enclosure to retrieve the ses sg name
+            ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+        else:
+            # 'enclosure_device' symlink is absent: use workaround (see NOTE)
+            try:
+                encl = enclosures[sasdev.attrs.enclosure_identifier]
+                ses_sg = encl.scsi_generic.sg_name
+            except KeyError:
+                # definitively not an array device
+                logging.warning('%s not an array device (%s)', blkdev.name,
+                                blkdev.sysfsnode.path)
+                continue
 
         # Retrieve bay_identifier from matching sas_device
         bayids.append(int(sasdev.attrs.bay_identifier))
 
         # Get subenclosure nickname
         snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % dmdev
-
         snics.append(snic)
 
     if not bayids or not snics:

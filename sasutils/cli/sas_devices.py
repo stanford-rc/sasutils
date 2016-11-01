@@ -132,13 +132,18 @@ class SASDevicesCLI(object):
 
     def print_end_devices(self, sysfsnode):
 
-        # NOTE: Unfortunately, we cannot rely on sysfs block dev 'enclosure_device'
-        # symlink to the array device (at least not on 3.10.0-327.36.3.el7).
-        # We have to do the enclosure lookup ourselves as a workaround.
+        # NOTE: Unfortunately, we cannot always rely on sysfs block device
+        # 'enclosure_device' symlink to the array device (at least not on
+        # 3.10.0-327.36.3.el7). We have to do the enclosure lookup ourselves
+        # as a workaround.
+
+        # Preload enclosure dict (sas_address -> EnclosureDevice)
         enclosures = {}
         for encl in sysfs.node('class').node('enclosure'):
             encldev = EnclosureDevice(encl.node('device'))
             enclosures[encldev.attrs.sas_address] = encldev
+
+        # This code is ugly and should be rewritten...
 
         devmap = {} # LU -> list of (SASEndDevice, SCSIDevice)
 
@@ -164,18 +169,20 @@ class SASDevicesCLI(object):
             encs = set()
             for sas_ed, scsi_device in dev_list:
                 blk = scsi_device.block
-                if not blk:
-                    continue
-                if blk.array_device is None:
+                assert blk
+                if blk.array_device:
+                    # 'enclosure_device' symlink is present (preferred method)
+                    encs.add(blk.array_device.enclosure)
+                else:
                     print("Warning: no enclosure symlink set for %s in %s" %
                           (blk.name, blk.scsi_device.sysfsnode.path))
-                sasdev = sas_ed.sas_device
-                try:
-                    encs.add(enclosures[sasdev.attrs.enclosure_identifier])
-                except KeyError:
-                    # not an array device
-                    print("Warning: %s not an array device (%s)" %
-                          (blk.name, sasdev.sysfsnode.path))
+                    try:
+                        sasdev = sas_ed.sas_device
+                        encs.add(enclosures[sasdev.attrs.enclosure_identifier])
+                    except KeyError:
+                        # not an array device?
+                        print("Warning: %s not an array device (%s)" %
+                              (blk.name, sasdev.sysfsnode.path))
             if not encs:
                 orphans.append((lu, dev_list))
                 continue
@@ -210,15 +217,20 @@ class SASDevicesCLI(object):
             def enclosure_finder((lu, dev_list)):
                 for sas_ed, scsi_device in dev_list:
                     blk = scsi_device.block
-                    if not blk:
-                        continue
-                    sasdev = sas_ed.sas_device
-                    try:
-                        encl = enclosures[sasdev.attrs.enclosure_identifier]
-                        return encl in encset
-                    except KeyError:
-                        # not an array device
-                        pass
+                    assert blk
+                    if blk.array_device:
+                        # 'enclosure_device' symlink is present (preferred method)
+                        encl = blk.array_device.enclosure
+                    else:
+                        # 'enclosure_device' symlink is absent: use workaround
+                        try:
+                            sasdev = sas_ed.sas_device
+                            encl = enclosures[sasdev.attrs.enclosure_identifier]
+                        except KeyError:
+                            # not an array device
+                            continue
+                    if encl in encset:
+                        return True
                 return False
 
             encdevs = list(ifilter(enclosure_finder, devmap.items()))
