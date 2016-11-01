@@ -31,6 +31,7 @@ import logging
 import sys
 
 from sasutils.sas import SASBlockDevice
+from sasutils.scsi import EnclosureDevice
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 
@@ -40,21 +41,34 @@ ALIAS_FORMAT = '{nickname}-bay{bay_identifier:02d}'
 
 def sas_sd_snic_alias(blkdev):
     """Use sasutils library to get the alias name from the block device."""
+
+    # NOTE: Unfortunately, we cannot rely on sysfs block dev 'enclosure_device'
+    # symlink to the array device (at least not on 3.10.0-327.36.3.el7).
+    # We have to do the enclosure lookup ourselves as a workaround.
+    enclosures = {}
+    for encl in sysfs.node('class').node('enclosure'):
+        encldev = EnclosureDevice(encl.node('device'))
+        enclosures[encldev.attrs.sas_address] = encldev
+
     # Instantiate SASBlockDevice object from block device sysfs node
     #   eg. /sys/block/sdx/device
     blkdev = SASBlockDevice(sysfs.node('block').node(blkdev).node('device'))
+    sasdev = blkdev.end_device.sas_device
 
-    # Check for orphan device
-    if not blkdev.array_device:
+    # NOTE: we could use blkdev.array_device.enclosure.scsi_generic
+    # if sysfs enclosure_device worked properly (see NOTE above)
+    try:
+        encl = enclosures[sasdev.attrs.enclosure_identifier]
+    except KeyError:
+        # not an array device
         logging.warning('%s not an array device (%s)', blkdev.name,
                         blkdev.sysfsnode.path)
-        return
+        raise
+
+    ses_sg = encl.scsi_generic.sg_name
 
     # Retrieve bay_identifier from matching sas_device
-    bay = int(blkdev.end_device.sas_device.attrs.bay_identifier)
-
-    # Use links to array_device and enclosure to retrieve the ses sg name
-    ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+    bay = int(sasdev.attrs.bay_identifier)
 
     # Get subenclosure nickname
     snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % blkdev.name
