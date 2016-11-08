@@ -57,8 +57,8 @@ def _init_argparser():
                        help='alternative JSON output mode')
     return parser.parse_args()
 
-def main():
-    """console_scripts entry point for the ses_report command-line."""
+def ses_report():
+    """ses_report command-line"""
     pargs = _init_argparser()
     if pargs.debug:
         # debugging on the same stream is recommended (stdout)
@@ -113,6 +113,13 @@ def main():
     if pargs.json:
         print(json.dumps(json_encl_dict, sort_keys=True, indent=4))
 
+def main():
+    """console_scripts entry point for ses_report"""
+    try:
+        ses_report()
+    except KeyError as err:
+        print("Not found: {0}".format(err), file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == '__main__':
     main()
