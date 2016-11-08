@@ -24,6 +24,7 @@ ses_report - SES status and metrics reporting utility
 
 from __future__ import print_function
 import argparse
+import json
 import logging
 import time
 import sys
@@ -48,10 +49,12 @@ def _init_argparser():
     group.add_argument('-s', '--status', action='store_true',
                        help='output status found in SES Element descriptors')
 
-    group = parser.add_argument_group('carbon options')
-    group.add_argument("--prefix", action="store", default='sasutils',
+    group = parser.add_argument_group('output options')
+    group.add_argument('--prefix', action='store', default='sasutils',
                        help='carbon prefix (example: "datacenter.cluster",'
                             ' default is "sasutils")')
+    group.add_argument('-j', '--json', action='store_true',
+                       help='alternative JSON output mode')
     return parser.parse_args()
 
 def main():
@@ -64,6 +67,8 @@ def main():
     pfx = pargs.prefix.strip('.')
     if pfx:
         pfx += '.'
+
+    json_encl_dict = {}
 
     # Iterate over sysfs SCSI enclosures
     for node in sysfs.node('class').node('enclosure'):
@@ -81,17 +86,32 @@ def main():
             snic += '_' + enclosure.attrs.sas_address
 
         if pargs.carbon:
-            time_now = time.time()
-            for edinfo in ses_get_ed_metrics(sg_dev.name):
-                # Print output using Carbon format
-                fmt = '{element_type}.{descriptor}.{key}_{unit} {value}'
-                path = fmt.format(**edinfo)
-                print('%s%s.%s %d' % (pfx, snic, path, time_now))
+            if pargs.json:
+                encl_json_list = []
+                for edinfo in ses_get_ed_metrics(sg_dev.name):
+                    encl_json_list.append(edinfo)
+                json_encl_dict[snic] = encl_json_list
+            else:
+                time_now = time.time()
+                for edinfo in ses_get_ed_metrics(sg_dev.name):
+                    # Print output using Carbon format
+                    fmt = '{element_type}.{descriptor}.{key}_{unit} {value}'
+                    path = fmt.format(**edinfo)
+                    print('%s%s.%s %d' % (pfx, snic, path, time_now))
         else:
-            for edstatus in ses_get_ed_status(sg_dev.name):
-                fmt = '{element_type}.{descriptor} {status}'
-                output = fmt.format(**edstatus)
-                print('%s%s.%s' % (pfx, snic, output))
+            if pargs.json:
+                encl_json_list = []
+                for edstatus in ses_get_ed_status(sg_dev.name):
+                    encl_json_list.append(edstatus)
+                json_encl_dict[snic] = encl_json_list
+            else:
+                for edstatus in ses_get_ed_status(sg_dev.name):
+                    fmt = '{element_type}.{descriptor} {status}'
+                    output = fmt.format(**edstatus)
+                    print('%s%s.%s' % (pfx, snic, output))
+
+    if pargs.json:
+        print(json.dumps(json_encl_dict, sort_keys=True, indent=4))
 
 
 if __name__ == '__main__':
