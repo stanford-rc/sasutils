@@ -204,11 +204,20 @@ class SASDevicesCLI(object):
             for enc in sorted(encset):
                 snic = ses_get_snic_nickname(enc.scsi_generic.name)
                 if snic:
-                    encinfolist.append('[%s]' % snic)
+                    if self.args.verbose:
+                        encinfolist.append('[%s:%s]' % (enc.scsi_generic.name,
+                                                        snic))
+                    else:
+                        encinfolist.append('[%s]' % snic)
                 else:
-                    vals = (enc.attrs.vendor, enc.attrs.model,
-                            enc.attrs.sas_address)
-                    encinfolist.append('[%s %s, addr: %s]' % vals)
+                    if self.args.verbose:
+                        vals = (enc.scsi_generic.name, enc.attrs.vendor,
+                                enc.attrs.model, enc.attrs.sas_address)
+                        encinfolist.append('[%s:%s %s, addr: %s]' % vals)
+                    else:
+                        vals = (enc.attrs.vendor, enc.attrs.model,
+                                enc.attrs.sas_address)
+                        encinfolist.append('[%s %s, addr: %s]' % vals)
 
             print("Enclosure group: %s" % ''.join(encinfolist))
 

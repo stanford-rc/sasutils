@@ -303,6 +303,12 @@ class SDSCSIDeviceNode(SDNode):
         iargs = dict((k, scsi_device.attrs[k]) for k in ikeys)
         dev_info = ', '.join(dev_info_fmt).format(**iargs)
 
+        dev_sg = ''
+        if self.disp.get('devices'):
+            sg = scsi_device.scsi_generic
+            if sg:
+                dev_sg = '(%s)' % sg.name
+
         scsi_type = scsi_device.attrs.type
         unknown_type = 'unknown[%s]' % scsi_type
         try:
@@ -325,7 +331,7 @@ class SDSCSIDeviceNode(SDNode):
                 # -vvv: print all queue attributes
                 queue_attr_info = dict(scsi_device.block.queue.attrs)
 
-            return '%s %s %s' % (dev_type, dev_info, blk_info), queue_attr_info
+            return ' '.join((dev_type, dev_info, blk_info, dev_sg)), queue_attr_info
         elif dev_type == 'enclosure':
             if verb > 0:
                 sg = scsi_device.scsi_generic
@@ -333,7 +339,7 @@ class SDSCSIDeviceNode(SDNode):
                 if snic:
                     dev_type += ' %s' % snic
 
-        return "%s %s" % (dev_type, dev_info), {}
+        return ' '.join((dev_type, dev_info, dev_sg)), {}
 
 
 class SDBlockQueueNode(SDNode):
@@ -350,13 +356,16 @@ def main():
                         help='Verbosity level, repeat multiple times!')
     parser.add_argument('--addr', action='store_true', default=False,
                         help='Print SAS addresses')
+    parser.add_argument('--devices', action='store_true', default=False,
+                        help='Print associated devices')
     pargs = parser.parse_args()
 
     # print short hostname as tree root node
     root_name = socket.gethostname().split('.')[0]
     root_obj = sysfs.node('class').node('sas_host')
 
-    disp = {'verbose': pargs.verbose, 'addr': pargs.addr}
+    disp = {'verbose': pargs.verbose, 'addr': pargs.addr,
+            'devices': pargs.devices}
     root = SDRootNode(name=root_name, baseobj=root_obj, disp=disp)
     root.print_tree()
 
