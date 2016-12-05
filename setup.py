@@ -19,7 +19,7 @@
 from setuptools import setup, find_packages
 import sys
 
-VERSION = '0.2.3'
+VERSION = '0.2.4'
 
 setup(name='sasutils',
       version=VERSION,
