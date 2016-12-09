@@ -99,13 +99,7 @@ class SysfsNode(object):
                 raise KeyError('Not found: %s' % path)
             result = default
 
-        if not result:
-            return result
-        #elif printable and all(c in string.printable for c in result):
-        else:
-            return result
-        #else:
-        #    return default
+        return result
 
     def readlink(self, pathname, default=None, absolute=False):
         if absolute:
@@ -145,15 +139,20 @@ class SysfsAttributes(collections.MutableMapping):
     def __setitem__(self, key, value):
         self.values[key] = value
 
-    def __getitem__(self, key):
+    def get(self, key, default=None):
         if not self.values.__contains__(key):
             try:
-                self.values[key] = SYSFSNODE_CLASS().get(self.paths[key],
-                                                         absolute=True)
+                self.values[key] = sysfs.get(self.paths[key], absolute=True)
             except KeyError:
-                raise AttributeError("%r object has no attribute %r" %
-                                     (self.__class__.__name__, key))
+                if default is not None:
+                    return default
+                else:
+                    raise AttributeError("%r object has no attribute %r" %
+                                         (self.__class__.__name__, key))
         return self.values[key]
+
+    def __getitem__(self, key):
+        return self.get(key)
 
     def __delitem__(self, key):
         if key in self.values:
