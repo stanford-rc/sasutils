@@ -99,7 +99,7 @@ class SASDevicesCLI(object):
             # Bay identifier
             try:
                 res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
-            except ValueError:
+            except (AttributeError, ValueError):
                 pass
 
             # Serial number
@@ -179,7 +179,7 @@ class SASDevicesCLI(object):
                     try:
                         sasdev = sas_ed.sas_device
                         encs.add(enclosures[sasdev.attrs.enclosure_identifier])
-                    except KeyError:
+                    except (AttributeError, KeyError):
                         # not an array device?
                         print("Warning: %s not an array device (%s)" %
                               (blk.name, sasdev.sysfsnode.path))
@@ -235,7 +235,7 @@ class SASDevicesCLI(object):
                         try:
                             sasdev = sas_ed.sas_device
                             encl = enclosures[sasdev.attrs.enclosure_identifier]
-                        except KeyError:
+                        except (AttributeError, KeyError):
                             # not an array device
                             continue
                     if encl in encset:
