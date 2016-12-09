@@ -32,7 +32,7 @@ from sasutils.sysfs import sysfs
 def format_attrs(attrlist, attrs):
     """filter keys to avoid SysfsObject cache miss on all attrs"""
     attr_fmt = ('%s: {%s}' % t for t in attrlist)
-    iargs = dict((k, attrs[k]) for _, k in attrlist)
+    iargs = dict((k, attrs.get(k, 'N/A')) for _, k in attrlist)
     return ', '.join(attr_fmt).format(**iargs)
 
 
@@ -160,7 +160,8 @@ class SDHostNode(SDNode):
                  'host_sas_address', 'version_product', 'version_bios',
                  'version_fw')
 
-        iargs = dict((k, self.baseobj.scsi_host.attrs[k]) for k in ikeys)
+        iargs = dict((k, self.baseobj.scsi_host.attrs.get(k, 'N/A'))
+                     for k in ikeys)
 
         return '%s %s' % (self.name, ', '.join(info_fmt).format(**iargs))
 
@@ -182,7 +183,7 @@ class SDExpanderNode(SDHostNode):
                                      ('rev', 'product_rev')),
                                     expander.attrs)
         elif verb > 0:
-            exp_info = expander.attrs['vendor_id']
+            exp_info = expander.attrs.get('vendor_id', 'N/A')
         else:
             exp_info = ''
 
@@ -300,7 +301,7 @@ class SDSCSIDeviceNode(SDNode):
             dev_info_fmt.append('addr: {sas_address}')
 
         ikeys = ('vendor', 'model', 'rev', 'sas_address')
-        iargs = dict((k, scsi_device.attrs[k]) for k in ikeys)
+        iargs = dict((k, scsi_device.attrs.get(k, 'N/A')) for k in ikeys)
         dev_info = ', '.join(dev_info_fmt).format(**iargs)
 
         dev_sg = ''
