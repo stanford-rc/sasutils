@@ -388,8 +388,11 @@ def main():
 
     disp = {'verbose': pargs.verbose, 'addr': pargs.addr,
             'devices': pargs.devices, 'counters': pargs.counters}
-    root = SDRootNode(name=root_name, baseobj=root_obj, disp=disp)
-    root.print_tree()
+    try:
+        root = SDRootNode(name=root_name, baseobj=root_obj, disp=disp)
+        root.print_tree()
+    except IOError:
+        pass
 
 
 if __name__ == '__main__':
