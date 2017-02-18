@@ -14,6 +14,7 @@ sasutils is a set of command-line tools and a Python library to ease the adminis
 sasutils command-line tools
 ===========================
 
+* sas_counters
 * sas_devices
 * sas_discover
 * ses_report
@@ -22,6 +23,27 @@ Also, two "zeroconf" udev scripts for use in udev rules that create friendly dev
 
 * sas_mpath_snic_alias
 * sas_sd_snic_alias
+
+sas_counters
+------------
+
+**sas_counters** reports SAS/SES/SD I/O and phy error counters and provides SAS topology information in an output suitable for Carbon/Graphite.
+This command also supports SES-2 nicknames as seen in the example below (``io1-sassw1`` is the nickname of a SAS switch and ``io1-jbod1-0`` is the nickname of a JBOD SIM).
+
+    .. code-block::
+
+        $ sas_counters
+        ...
+        oak-io1-s1.SAS9300-8e.0x500605b00ab01234.Switch184.io1-sassw1.JB4602_SIM_0.io1-jbod1-0.bays.41.ST8000NM0075.0x5000c50084c79876.ioerr_cnt 2 1487457378
+        oak-io1-s1.SAS9300-8e.0x500605b00ab01234.Switch184.io1-sassw1.JB4602_SIM_0.io1-jbod1-0.bays.41.ST8000NM0075.0x5000c50084c79876.iodone_cnt 7154904 1487457378
+        oak-io1-s1.SAS9300-8e.0x500605b00ab01234.Switch184.io1-sassw1.JB4602_SIM_0.io1-jbod1-0.bays.41.ST8000NM0075.0x5000c50084c79876.iorequest_cnt 7154906 1487457378
+        ...
+        oak-io1-s1.SAS9300-8e.0x500605b00ab05678.Switch184.io1-sassw2.phys.15.invalid_dword_count 5 1487457378
+        oak-io1-s1.SAS9300-8e.0x500605b00ab05678.Switch184.io1-sassw2.phys.15.loss_of_dword_sync_count 1 1487457378
+        oak-io1-s1.SAS9300-8e.0x500605b00ab05678.Switch184.io1-sassw2.phys.15.phy_reset_problem_count 0 1487457378
+        oak-io1-s1.SAS9300-8e.0x500605b00ab05678.Switch184.io1-sassw2.phys.15.running_disparity_error_count 1 1487457378
+        ...
+
 
 sas_discover
 ------------

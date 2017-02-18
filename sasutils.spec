@@ -37,6 +37,7 @@ rm -rf %{buildroot}
 %doc README.rst
 %{python_sitelib}/sasutils/
 %{python_sitelib}/sasutils-*-py?.?.egg-info
+%{_bindir}/sas_counters
 %{_bindir}/sas_devices
 %{_bindir}/sas_discover
 %{_bindir}/sas_mpath_snic_alias
