@@ -315,10 +315,13 @@ class SDSCSIDeviceNode(SDNode):
             dev_info_fmt += ['model: {model}', 'rev: {rev}']
         if self.disp.get('addr'):
             dev_info_fmt.append('addr: {sas_address}')
+        if self.disp.get('counters'):
+            dev_info_fmt.append('ioerr_cnt: {ioerr_cnt}')
+            dev_info_fmt.append('iodone_cnt: {iodone_cnt}')
 
-        ikeys = ('vendor', 'model', 'rev', 'sas_address')
+        ikeys = ('vendor', 'model', 'rev', 'sas_address', 'ioerr_cnt', 'iodone_cnt')
         iargs = dict((k, scsi_device.attrs.get(k, 'N/A')) for k in ikeys)
-        dev_info = ', '.join(dev_info_fmt).format(**iargs)
+        dev_info = ' '.join(dev_info_fmt).format(**iargs)
 
         dev_sg = ''
         if self.disp.get('devices'):
@@ -338,9 +341,9 @@ class SDSCSIDeviceNode(SDNode):
 
             size = block.sizebytes()
             if size >= 1e12:
-                blk_info = "size %.1fTB" % (size / 1e12)
+                blk_info = "size: %.1fTB" % (size / 1e12)
             else:
-                blk_info = "size %.1fGB" % (size / 1e9)
+                blk_info = "size: %.1fGB" % (size / 1e9)
 
             queue_attr_info = {}
 
@@ -375,6 +378,8 @@ def main():
                         help='Print SAS addresses')
     parser.add_argument('--devices', action='store_true', default=False,
                         help='Print associated devices')
+    parser.add_argument('--counters', action='store_true', default=False,
+                        help='Print I/O counters')
     pargs = parser.parse_args()
 
     # print short hostname as tree root node
@@ -382,7 +387,7 @@ def main():
     root_obj = sysfs.node('class').node('sas_host')
 
     disp = {'verbose': pargs.verbose, 'addr': pargs.addr,
-            'devices': pargs.devices}
+            'devices': pargs.devices, 'counters': pargs.counters}
     root = SDRootNode(name=root_name, baseobj=root_obj, disp=disp)
     root.print_tree()
 
