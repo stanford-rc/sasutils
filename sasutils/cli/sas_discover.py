@@ -134,7 +134,23 @@ class SDRootNode(SDNode):
 class SDHostNode(SDNode):
 
     def resolve(self):
-        for index, port in enumerate(self.baseobj.ports):
+
+        def portsortfunc(p):
+            """helper sort function to return expanders first, then order by
+            scsi device type and bay identifier"""
+            if len(p.expanders) > 0:
+                return (1, 0, 0)
+            sortv = [0, 0, 0] # exp?, -type, bay
+            try:
+                if len(p.end_devices) > 0:
+                    sortv[1] = -int(p.end_devices[0].targets[0].attrs.type)
+                    sortv[2] = int(p.end_devices[0].sas_device.attrs.bay_identifier)
+            except (AttributeError, IndexError):
+                pass
+            return sortv
+
+        ports = sorted(self.baseobj.ports, key=portsortfunc)
+        for index, port in enumerate(ports):
             nphys = len(port.phys)
             last = bool(index == len(self.baseobj.ports) - 1)
             for expander in port.expanders:
