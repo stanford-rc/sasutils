@@ -31,10 +31,11 @@ from sasutils.sysfs import sysfs
 
 class SDNode(object):
 
-    def __init__(self, baseobj, name=None, parent=None):
+    def __init__(self, baseobj, name=None, parent=None, prefix=''):
         self.name = name
         self.parent = parent
         self.baseobj = baseobj
+        self.prefix = prefix
         self.children = []
         self.nickname = None
         self.resolve()
@@ -51,6 +52,8 @@ class SDNode(object):
             path.append(str(self))
         if isinstance(self.parent, SDNode):
             path += self.parent.bottomup()
+        elif self.prefix:
+            path.append(self.prefix)
         return path
 
     def print_counter(self, key, value):
@@ -200,12 +203,17 @@ class SDSCSIDeviceNode(SDNode):
 def main():
     """console_scripts entry point for sas_counters command-line."""
     parser = argparse.ArgumentParser()
-    parser.parse_args()
+    parser.add_argument('--prefix', action='store',
+                        default='sasutils.sas_counters',
+                        help='carbon prefix (example: "datacenter.cluster",'
+                             ' default is "sasutils.sas_counters")')
+    pargs = parser.parse_args()
+    pfx = pargs.prefix.strip('.')
     # print short hostname as tree root node
     root_name = socket.gethostname().split('.')[0]
     root_obj = sysfs.node('class').node('sas_host')
     try:
-        SDRootNode(root_obj, name=root_name).print_tree()
+        SDRootNode(root_obj, name=root_name, prefix=pfx).print_tree()
     except IOError:
         pass
 
