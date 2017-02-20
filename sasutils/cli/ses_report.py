@@ -50,9 +50,10 @@ def _init_argparser():
                        help='output status found in SES Element descriptors')
 
     group = parser.add_argument_group('output options')
-    group.add_argument('--prefix', action='store', default='sasutils',
+    group.add_argument('--prefix', action='store',
+                       default='sasutils.ses_report',
                        help='carbon prefix (example: "datacenter.cluster",'
-                            ' default is "sasutils")')
+                            ' default is "sasutils.ses_report")')
     group.add_argument('-j', '--json', action='store_true',
                        help='alternative JSON output mode')
     return parser.parse_args()
