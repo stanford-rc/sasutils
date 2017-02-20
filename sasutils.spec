@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:          sasutils
-Version:       0.2.5
+Version:       0.3.0
 Release:       1%{?dist}
 Summary:       Serial Attached SCSI (SAS) Linux utilities
 
@@ -45,6 +45,9 @@ rm -rf %{buildroot}
 %{_bindir}/ses_report
 
 %changelog
+* Sun Feb 19 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.0-1
+- update version
+
 * Fri Dec  9 2016 Stephane Thiell <sthiell@stanford.edu> 0.2.5-1
 - update version
 

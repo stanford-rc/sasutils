@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2016
+# Copyright (C) 2016, 2017
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
@@ -19,7 +19,7 @@
 from setuptools import setup, find_packages
 import sys
 
-VERSION = '0.2.5'
+VERSION = '0.3.0'
 
 setup(name='sasutils',
       version=VERSION,
