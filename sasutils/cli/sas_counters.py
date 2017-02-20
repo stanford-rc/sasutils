@@ -174,14 +174,8 @@ class SDSCSIDeviceNode(SDNode):
 
     def get_scsi_device_info(self, scsi_device):
         #print(scsi_device.sysfsnode.path)
-        dev_info_fmt = []
-        if True:
-            dev_info_fmt.append('{model}')
-            dev_info_fmt.append('{sas_address}')
-
-        ikeys = ('model', 'sas_address')
-        iargs = dict((k, scsi_device.attrs.get(k, 'N/A')) for k in ikeys)
-        dev_info = '.'.join(dev_info_fmt).format(**iargs)
+        dev_info = '.'.join((scsi_device.attrs.get('model', 'MODEL_UNKNOWN'),
+                             scsi_device.attrs['sas_address']))
 
         scsi_type = scsi_device.attrs.type
         unknown_type = 'unknown[%s]' % scsi_type
@@ -195,10 +189,11 @@ class SDSCSIDeviceNode(SDNode):
             snic = ses_get_snic_nickname(sg.name)
             # automatically resolve parent expander nickname
             self.parent.parent.nickname = snic
-            return snic
-        else:
-            return dev_info
+            if snic:
+                return '.'.join((scsi_device.attrs.get('model',
+                                                       'MODEL_UNKNOWN'), snic))
 
+        return dev_info
 
 def main():
     """console_scripts entry point for sas_counters command-line."""
