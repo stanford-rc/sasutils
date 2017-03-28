@@ -21,14 +21,11 @@ import json
 import glob
 from os import access, listdir, readlink, R_OK
 from os.path import basename, isdir, isfile, join, realpath
-import string
-
 
 SYSFS_ROOT = '/sys'
 
 
 class SysfsNode(object):
-
     def __init__(self, path=None):
         if path is None:
             self.path = SYSFS_ROOT
@@ -79,9 +76,14 @@ class SysfsNode(object):
         for path in glob.glob(path):
             if isfile(path) and access(path, R_OK):
                 try:
-                    with open(path, 'r') as fp:
-                        yield fp.read().strip()
-                except IOError, exc:
+                    with open(path, 'rb') as fp:
+                        data = fp.read().strip()
+                        try:
+                            data = data.decode("utf-8")
+                        except UnicodeDecodeError:
+                            pass
+                        yield data
+                except IOError as exc:
                     if not ignore_errors:
                         yield str(exc)
 
@@ -169,7 +171,6 @@ class SysfsAttributes(collections.MutableMapping):
 
 
 class SysfsObject(object):
-
     def __init__(self, sysfsnode):
         self.sysfsnode = sysfsnode
         self.name = str(sysfsnode)
@@ -209,7 +210,6 @@ class SysfsObject(object):
 
 
 class SysfsDevice(SysfsObject):
-
     def __init__(self, device, subsys, sysfsdev_pattern='*[0-9]'):
         # only consider end_device-20:2:57, 20:0:119:0, host19
         SysfsObject.__init__(self, device.node('%s/%s' % (subsys,

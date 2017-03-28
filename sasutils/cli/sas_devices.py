@@ -20,7 +20,7 @@
 from __future__ import print_function
 import argparse
 from collections import namedtuple
-from itertools import ifilter, groupby
+from itertools import groupby
 from operator import attrgetter
 import sys
 
@@ -105,7 +105,7 @@ class SASDevicesCLI(object):
             # Serial number
             try:
                 pg80 = scsi_device.attrs.vpd_pg80
-                res['pg80'] = pg80[4:]
+                res['pg80'] = pg80[4:].decode("utf-8")
             except AttributeError:
                 pg80 = vpd_get_page80_sn(scsi_device.block.name)
                 res['pg80'] = pg80
@@ -176,8 +176,8 @@ class SASDevicesCLI(object):
                 else:
                     print("Warning: no enclosure symlink set for %s in %s" %
                           (blk.name, blk.scsi_device.sysfsnode.path))
+                    sasdev = sas_ed.sas_device
                     try:
-                        sasdev = sas_ed.sas_device
                         encs.add(enclosures[sasdev.attrs.enclosure_identifier])
                     except (AttributeError, KeyError):
                         # not an array device?
@@ -201,7 +201,7 @@ class SASDevicesCLI(object):
 
         for encset in encgroups:
             encinfolist = []
-            for enc in sorted(encset):
+            for enc in encset: #sorted(encset):
                 snic = ses_get_snic_nickname(enc.scsi_generic.name)
                 if snic:
                     if self.args.verbose:
@@ -223,7 +223,8 @@ class SASDevicesCLI(object):
 
             cnt = 0
 
-            def enclosure_finder((lu, dev_list)):
+            def enclosure_finder(arg):
+                lu, dev_list = arg
                 for sas_ed, scsi_device in dev_list:
                     blk = scsi_device.block
                     assert blk
@@ -242,7 +243,7 @@ class SASDevicesCLI(object):
                         return True
                 return False
 
-            encdevs = list(ifilter(enclosure_finder, devmap.items()))
+            encdevs = list(filter(enclosure_finder, devmap.items()))
             maxpaths = max(len(devs) for lu, devs in encdevs)
 
             if self.args.verbose:

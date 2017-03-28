@@ -19,7 +19,7 @@
 
 __author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 
-from struct import unpack
+from struct import unpack_from
 import subprocess
 
 
@@ -31,24 +31,24 @@ def vpd_decode_pg83_lu(pagebuf):
     VPD_ASSOC_LU = 0
     sz = len(pagebuf)
     offset = 4
-    d, = unpack('B', pagebuf[offset+2])
+    d, = unpack_from('B', pagebuf, offset+2)
     assert d == 0, 'skip_1st_iter not implemented'
     while True:
-        code_set, = unpack('B', pagebuf[offset])
-        d, = unpack('B', pagebuf[offset+1])
+        code_set, = unpack_from('B', pagebuf, offset)
+        d, = unpack_from('B', pagebuf, offset+1)
         design_type = (d & 0xf)
         assoc = (d >> 4) & 0x3
-        d, = unpack('B', pagebuf[offset+3])
+        d, = unpack_from('B', pagebuf, offset+3)
         next_offset = offset + (d & 0xf) + 4
         if next_offset > sz:
             break
 
         if design_type == 3 and assoc == VPD_ASSOC_LU:
-            d, = unpack('B', pagebuf[offset+4])
+            d, = unpack_from('B', pagebuf, offset+4)
             naa = (d >> 4) & 0xff
             return '0x' + ''.join("%02x" % i
-                                  for i in unpack('BBBBBBBB',
-                                                  pagebuf[offset+4:offset+12]))
+                                  for i in unpack_from('BBBBBBBB',
+                                                  pagebuf, offset+4))
         offset = next_offset
 
 #
@@ -61,7 +61,7 @@ def vpd_get_page80_sn(blkdev):
     cmdargs = ['scsi_id', '--page=0x80', '--whitelisted',
                '--device=/dev/' + blkdev]
     output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
-    return output.rstrip().split()[-1]
+    return output.decode("utf-8").rstrip().split()[-1]
 
 def vpd_get_page83_lu(blkdev):
     """
@@ -70,4 +70,4 @@ def vpd_get_page83_lu(blkdev):
     cmdargs = ['scsi_id', '--page=0x83', '--whitelisted',
                '--device=/dev/' + blkdev]
     output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
-    return output.rstrip()
+    return output.decode("utf-8").rstrip()
