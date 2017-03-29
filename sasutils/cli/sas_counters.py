@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2017 Board of Trustees, Leland Stanford Jr. University
 #
@@ -100,7 +100,7 @@ class SDHostNode(SDNode):
                     sortv[1] = -int(port.end_devices[0].targets[0].attrs.type)
                     sortv[2] = int(port.end_devices[0].sas_device.attrs \
                                    .bay_identifier)
-            except StandardError:
+            except RuntimeError:
                 pass
             return sortv
 

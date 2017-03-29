@@ -153,3 +153,11 @@ class BlockDevice(SysfsDevice):
         #Block size is expressed in 512b sectors regardless of underlaying disk structure
         #logical_block_size = float(self.queue.attrs.logical_block_size)
         return blk_size * 512
+
+    def dm(self):
+        """Return /dev/mapper device name if present"""
+        try:
+            dm_dev = SysfsDevice(self.sysfsnode, subsys="holders", sysfsdev_pattern="*[0-9]/dm")
+        except KeyError:
+            return "[Not mapped]"
+        return dm_dev.attrs.name

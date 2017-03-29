@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University

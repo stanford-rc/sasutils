@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -23,6 +23,7 @@ from collections import namedtuple
 from itertools import groupby
 from operator import attrgetter
 import sys
+import re
 
 from sasutils.sas import SASHost, SASExpander, SASEndDevice
 from sasutils.scsi import EnclosureDevice
@@ -35,11 +36,11 @@ from sasutils.vpd import vpd_get_page80_sn
 class SASDevicesCLI(object):
     """Main class for sas_devises command-line interface."""
 
-    HDR_DEVLIST_VERB = {'bay': 'BAY', 'lu': 'LOGICAL UNIT', 'paths': 'PATHS',
+    HDR_DEVLIST_VERB = {'bay': 'BAY', 'lu': 'LOGICAL UNIT', 'dm': 'DEVICE MAPPER', 'paths': 'PATHS',
                         'blkdevs': 'BLOCK_DEVS', 'sgdevs': 'SG_DEVS',
                         'vendor': 'VENDOR', 'model': 'MODEL', 'rev': 'REV',
                         'pg80': 'SERIAL_NUMBER', 'blk_sz_info': 'SIZE'}
-    FMT_DEVLIST_VERB = '{bay:>3} {lu:>18} {blkdevs:>12} {sgdevs:>12} ' \
+    FMT_DEVLIST_VERB = '{bay:>3} {lu:>18} {dm:>18} {blkdevs:>12} {sgdevs:>12} ' \
                        '{paths:>5} {vendor:>8} {model:>16} {pg80:>22}' \
                        '{rev:>8} {blk_sz_info}'
 
@@ -80,12 +81,10 @@ class SASDevicesCLI(object):
         print("Found %d SAS expanders" % num_exp)
 
     def _get_dev_attrs(self, sas_end_device, scsi_device, with_sn=True):
-        res = {}
-
         # Vendor info
-        res['vendor'] = scsi_device.attrs.vendor
-        res['model'] = scsi_device.attrs.model
-        res['rev'] = scsi_device.attrs.rev
+        res = {'vendor': scsi_device.attrs.vendor,
+               'model': scsi_device.attrs.model,
+               'rev': scsi_device.attrs.rev}
 
         # Size of block device
         blk_sz = scsi_device.block.sizebytes()
@@ -96,6 +95,9 @@ class SASDevicesCLI(object):
         res['blk_sz_info'] = blk_sz_info
 
         if with_sn:
+            # Device Mapper name
+            res['dm'] = scsi_device.block.dm()
+
             # Bay identifier
             try:
                 res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
@@ -145,7 +147,7 @@ class SASDevicesCLI(object):
 
         # This code is ugly and should be rewritten...
 
-        devmap = {} # LU -> list of (SASEndDevice, SCSIDevice)
+        devmap = {}  # LU -> list of (SASEndDevice, SCSIDevice)
 
         for node in sysfsnode:
             sas_end_device = SASEndDevice(node.node('device'))
@@ -201,7 +203,8 @@ class SASDevicesCLI(object):
 
         for encset in encgroups:
             encinfolist = []
-            for enc in encset: #sorted(encset):
+            kfun = lambda o: int(re.sub("\D", "", o.scsi_generic.name))
+            for enc in sorted(encset, key=kfun):
                 snic = ses_get_snic_nickname(enc.scsi_generic.name)
                 if snic:
                     if self.args.verbose:

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -21,9 +21,8 @@ from __future__ import print_function
 import argparse
 from itertools import groupby
 import socket
-import sys
 
-from sasutils.sas import SASHost, SASExpander, SASEndDevice
+from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.scsi import MAP_TYPES, TYPE_ENCLOSURE
 from sasutils.sysfs import sysfs
