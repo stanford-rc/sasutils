@@ -1,7 +1,5 @@
-
 import os
 from os.path import dirname, join
-import sys
 from unittest import TestCase
 
 import sasutils.sysfs
@@ -28,7 +26,8 @@ class SysfsNodeTest(TestCase):
     def test_iter(self):
         block = sysfs.node('block')
         for i in block:
-            self.assertTrue(isinstance(i, SysfsNode) or isinstance(i) is basestring)
+            self.assertTrue(
+                isinstance(i, SysfsNode) or isinstance(i, (str, bytes)))
 
     def test_glob(self):
         block = sysfs.node('block')
@@ -68,7 +67,8 @@ class SysfsObjectTest(TestCase):
 
     def test_create(self):
         sysfsobj = SysfsObject(sysfs.node('block').node(self.sd))
-        self.assertEqual(sysfsobj.sysfsnode.path, join(sysfsroot, 'block/%s' % self.sd))
+        self.assertEqual(sysfsobj.sysfsnode.path,
+                         join(sysfsroot, 'block/%s' % self.sd))
         self.assertTrue(sysfsobj.attrs.size > 0)
 
 
@@ -84,4 +84,5 @@ class SysfsDeviceTest(TestCase):
         self.assertEqual(sysfsdev.device.path,
                          join(sysfsroot, 'block/%s/device' % self.sd))
         self.assertEqual(sysfsdev.sysfsnode.path,
-                         join(sysfsroot, 'block/%s/device/block/%s' % (self.sd, self.sd)))
+                         join(sysfsroot,
+                              'block/%s/device/block/%s' % (self.sd, self.sd)))

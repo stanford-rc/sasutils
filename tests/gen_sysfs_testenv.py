@@ -22,7 +22,7 @@ from __future__ import print_function
 import glob
 import nose
 import os
-from os.path import basename, dirname, isdir, isfile, islink, join
+from os.path import isdir, isfile, join
 import sys
 
 # use zipfile as it is safer than tarfile with sysfs
@@ -30,20 +30,17 @@ import sys
 from zipfile import ZipFile, ZipInfo, ZIP_DEFLATED
 
 import sasutils.sysfs
-from sasutils.cli.sas_discover import SASDiscoverCLI, adv_prompt
-from sasutils.sas import SASHost
 
 
 def zipfile_add(path):
     try:
-        #print(path, file=sys.stderr)
+        # print(path, file=sys.stderr)
         zipfile.write(path)
     except OSError as err:
         print('zipfile OSError %s for %s' % (err, path), file=sys.stderr)
 
 
 class SysfsNodeDump(sasutils.sysfs.SysfsNode):
-
     def __iter__(self):
         for name in os.listdir(self.path):
             path = join(self.path, name)
@@ -80,7 +77,6 @@ class SysfsNodeDump(sasutils.sysfs.SysfsNode):
 
 sasutils.sysfs.SYSFSNODE_CLASS = SysfsNodeDump
 sysfs = sasutils.sysfs.sysfs = SysfsNodeDump()
-
 
 if __name__ == '__main__':
     zipfile = ZipFile('sysfs_testenv.zip', 'w')

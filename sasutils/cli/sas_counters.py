@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Copyright (C) 2017 Board of Trustees, Leland Stanford Jr. University
 #
@@ -30,7 +30,6 @@ from sasutils.sysfs import sysfs
 
 
 class SDNode(object):
-
     def __init__(self, baseobj, name=None, parent=None, prefix=''):
         self.name = name
         self.parent = parent
@@ -67,7 +66,7 @@ class SDNode(object):
 
     def add_child(self, sdclass, parent, baseobj, name=None):
         if not name:
-            baseobjname = baseobj.name # mandatory when name not provided
+            baseobjname = baseobj.name  # mandatory when name not provided
         else:
             baseobjname = name
         self.children.append(sdclass(baseobj, baseobjname, parent))
@@ -78,7 +77,6 @@ class SDNode(object):
 
 
 class SDRootNode(SDNode):
-
     def resolve(self):
         for obj in self.baseobj:
             sas_host = SASHost(obj.node('device'))
@@ -86,19 +84,18 @@ class SDRootNode(SDNode):
 
 
 class SDHostNode(SDNode):
-
     def resolve(self):
 
-        def portsortfunc(port):
+        def portsortfunc(port_n):
             """helper sort function to return expanders first, then order by
             scsi device type and bay identifier"""
-            if len(port.expanders) > 0:
-                return (1, 0, 0)
-            sortv = [0, 0, 0] # exp?, -type, bay
+            if len(port_n.expanders) > 0:
+                return 1, 0, 0
+            sortv = [0, 0, 0]  # exp?, -type, bay
             try:
-                if len(port.end_devices) > 0:
-                    sortv[1] = -int(port.end_devices[0].targets[0].attrs.type)
-                    sortv[2] = int(port.end_devices[0].sas_device.attrs \
+                if len(port_n.end_devices) > 0:
+                    sortv[1] = -int(port_n.end_devices[0].targets[0].attrs.type)
+                    sortv[2] = int(port_n.end_devices[0].sas_device.attrs
                                    .bay_identifier)
             except RuntimeError:
                 pass
@@ -129,7 +126,6 @@ class SDHostNode(SDNode):
 
 
 class SDExpanderNode(SDHostNode):
-
     def __str__(self):
         expander = self.baseobj
         if self.nickname:
@@ -140,7 +136,6 @@ class SDExpanderNode(SDHostNode):
 
 
 class SDEndDeviceNode(SDNode):
-
     def resolve(self):
         for target in self.baseobj.targets:
             self.add_child(SDSCSIDeviceNode, self, target)
@@ -161,7 +156,6 @@ class SDEndDeviceNode(SDNode):
 
 
 class SDSCSIDeviceNode(SDNode):
-
     def resolve(self):
         # Display device errors (work with both ses and sd drivers)
         scsi_device = self.baseobj
@@ -173,7 +167,7 @@ class SDSCSIDeviceNode(SDNode):
         return self.get_scsi_device_info(self.baseobj)
 
     def get_scsi_device_info(self, scsi_device):
-        #print(scsi_device.sysfsnode.path)
+        # print(scsi_device.sysfsnode.path)
         dev_info = '.'.join((scsi_device.attrs.get('model', 'MODEL_UNKNOWN'),
                              scsi_device.attrs['sas_address']))
 
@@ -194,6 +188,7 @@ class SDSCSIDeviceNode(SDNode):
                                                        'MODEL_UNKNOWN'), snic))
 
         return dev_info
+
 
 def main():
     """console_scripts entry point for sas_counters command-line."""

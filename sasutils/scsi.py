@@ -60,6 +60,7 @@ MAP_TYPES = {TYPE_DISK: 'disk',
 # SCSI classes
 #
 
+
 class SCSIHost(SysfsDevice):
 
     def __init__(self, device, subsys='scsi_host'):
@@ -71,12 +72,14 @@ class SCSIDisk(SysfsDevice):
     def __init__(self, device, subsys='scsi_disk'):
         SysfsDevice.__init__(self, device, subsys)
 
+
 class SCSIGeneric(SysfsDevice):
 
     def __init__(self, device, subsys='scsi_generic'):
         SysfsDevice.__init__(self, device, subsys)
         # the basename of self.sysfsnode is the name of the sg device
         self.sg_name = str(self.sysfsnode)
+
 
 class SCSIDevice(SysfsObject):
 
@@ -97,11 +100,13 @@ class SCSIDevice(SysfsObject):
 # SCSI bus classes
 #
 
+
 class EnclosureDevice(SCSIDevice):
     """Managed enclosure device"""
 
     def __init__(self, device):
         SCSIDevice.__init__(self, device)
+
 
 class ArrayDevice(SysfsObject):
 
@@ -112,6 +117,7 @@ class ArrayDevice(SysfsObject):
 #
 # Block devices
 #
+
 
 class BlockDevice(SysfsDevice):
     """
@@ -150,14 +156,16 @@ class BlockDevice(SysfsDevice):
     def sizebytes(self):
         """Return block device size in bytes"""
         blk_size = float(self.attrs.size)
-        #Block size is expressed in 512b sectors regardless of underlaying disk structure
-        #logical_block_size = float(self.queue.attrs.logical_block_size)
+        # Block size is expressed in 512b sectors regardless of
+        # underlaying disk structure.
+        # See https://goo.gl/L8GZCG for details
         return blk_size * 512
 
     def dm(self):
         """Return /dev/mapper device name if present"""
         try:
-            dm_dev = SysfsDevice(self.sysfsnode, subsys="holders", sysfsdev_pattern="*[0-9]/dm")
+            dm_dev = SysfsDevice(self.sysfsnode, subsys="holders",
+                                 sysfsdev_pattern="*[0-9]/dm")
         except KeyError:
             return "[Not mapped]"
         return dm_dev.attrs.name

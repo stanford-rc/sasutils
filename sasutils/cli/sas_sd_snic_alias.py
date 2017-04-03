@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -34,7 +34,6 @@ from sasutils.sas import SASBlockDevice
 from sasutils.scsi import EnclosureDevice
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
-
 
 ALIAS_FORMAT = '{nickname}-bay{bay_identifier:02d}'
 
@@ -80,6 +79,7 @@ def sas_sd_snic_alias(blkdev):
     snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % blkdev.name
 
     return ALIAS_FORMAT.format(nickname=snic, bay_identifier=bay)
+
 
 def main():
     """Entry point for sas_sd_snic_alias command-line."""

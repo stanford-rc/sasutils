@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -46,7 +46,7 @@ class SDNode(object):
         self.depth = depth
         self.disp = disp
         self.prinfo = prinfo or []
-        self.proffset = 0       # prompt offset; derived classes may override
+        self.proffset = 0  # prompt offset; derived classes may override
         self._prompt = None
         self.resolve()
 
@@ -80,7 +80,7 @@ class SDNode(object):
         return ''.join(prompt)
 
     def adv_prompt(self, offset=0, last=False):
-        self.prompt # ensure current prompt is generated
+        self.prompt  # ensure current prompt is generated
         if last:
             plink = '`'
         else:
@@ -95,7 +95,7 @@ class SDNode(object):
 
     def add_child(self, sdclass, baseobj, name=None, nphys=0, last=False):
         if not name:
-            baseobjname = baseobj.name # mandatory when name not provided
+            baseobjname = baseobj.name  # mandatory when name not provided
         else:
             baseobjname = name
         self.children.append(sdclass(baseobjname, baseobj, nphys,
@@ -121,7 +121,6 @@ class SDNode(object):
 
 
 class SDRootNode(SDNode):
-
     def resolve(self):
         sas_hosts = list(self.baseobj)
         for index, obj in enumerate(sas_hosts):
@@ -131,19 +130,19 @@ class SDRootNode(SDNode):
 
 
 class SDHostNode(SDNode):
-
     def resolve(self):
 
         def portsortfunc(p):
             """helper sort function to return expanders first, then order by
             scsi device type and bay identifier"""
             if len(p.expanders) > 0:
-                return (1, 0, 0)
-            sortv = [0, 0, 0] # exp?, -type, bay
+                return 1, 0, 0
+            sortv = [0, 0, 0]  # exp?, -type, bay
             try:
                 if len(p.end_devices) > 0:
                     sortv[1] = -int(p.end_devices[0].targets[0].attrs.type)
-                    sortv[2] = int(p.end_devices[0].sas_device.attrs.bay_identifier)
+                    sortv[2] = int(
+                        p.end_devices[0].sas_device.attrs.bay_identifier)
             except (AttributeError, IndexError):
                 pass
             return sortv
@@ -182,7 +181,6 @@ class SDHostNode(SDNode):
 
 
 class SDExpanderNode(SDHostNode):
-
     def resolve(self):
         linkinfo = '%dx--' % self.nphys
         self.proffset = len(linkinfo)
@@ -214,7 +212,6 @@ class SDExpanderNode(SDHostNode):
 
 
 class SDEndDeviceNode(SDNode):
-
     @property
     def gatherme(self):
         return self.disp['verbose'] < 2 and len(self.children) <= 1
@@ -269,7 +266,6 @@ class SDEndDeviceNode(SDNode):
 
 
 class SDSCSIDeviceNode(SDNode):
-
     # Note: additional instance attribute dinfo defined in resolve()
 
     @property
@@ -301,7 +297,7 @@ class SDSCSIDeviceNode(SDNode):
                 self.add_child(SDBlockQueueNode, qval, name=qattr, last=last)
 
     def __str__(self):
-        return self.dinfo # defined in resolve()
+        return self.dinfo  # defined in resolve()
 
     def get_scsi_device_info(self, scsi_device, want_queue_attrs=False):
         verb = self.disp.get('verbose')
@@ -318,7 +314,8 @@ class SDSCSIDeviceNode(SDNode):
             dev_info_fmt.append('ioerr_cnt: {ioerr_cnt}')
             dev_info_fmt.append('iodone_cnt: {iodone_cnt}')
 
-        ikeys = ('vendor', 'model', 'rev', 'sas_address', 'ioerr_cnt', 'iodone_cnt')
+        ikeys = (
+            'vendor', 'model', 'rev', 'sas_address', 'ioerr_cnt', 'iodone_cnt')
         iargs = dict((k, scsi_device.attrs.get(k, 'N/A')) for k in ikeys)
         dev_info = ' '.join(dev_info_fmt).format(**iargs)
 
@@ -350,7 +347,8 @@ class SDSCSIDeviceNode(SDNode):
                 # -vvv: print all queue attributes
                 queue_attr_info = dict(scsi_device.block.queue.attrs)
 
-            return ' '.join((dev_type, dev_info, blk_info, dev_sg)), queue_attr_info
+            return ' '.join(
+                (dev_type, dev_info, blk_info, dev_sg)), queue_attr_info
         elif dev_type == 'enclosure':
             if verb > 0:
                 sg = scsi_device.scsi_generic

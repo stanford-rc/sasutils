@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -36,13 +36,14 @@ from sasutils.vpd import vpd_get_page80_sn
 class SASDevicesCLI(object):
     """Main class for sas_devises command-line interface."""
 
-    HDR_DEVLIST_VERB = {'bay': 'BAY', 'lu': 'LOGICAL UNIT', 'dm': 'DEVICE MAPPER', 'paths': 'PATHS',
+    HDR_DEVLIST_VERB = {'bay': 'BAY', 'lu': 'LOGICAL UNIT',
+                        'dm': 'DEVICE MAPPER', 'paths': 'PATHS',
                         'blkdevs': 'BLOCK_DEVS', 'sgdevs': 'SG_DEVS',
                         'vendor': 'VENDOR', 'model': 'MODEL', 'rev': 'REV',
                         'pg80': 'SERIAL_NUMBER', 'blk_sz_info': 'SIZE'}
-    FMT_DEVLIST_VERB = '{bay:>3} {lu:>18} {dm:>18} {blkdevs:>12} {sgdevs:>12} ' \
-                       '{paths:>5} {vendor:>8} {model:>16} {pg80:>22}' \
-                       '{rev:>8} {blk_sz_info}'
+    FMT_DEVLIST_VERB = '{bay:>3} {lu:>18} {dm:>18} {blkdevs:>12} ' \
+                       '{sgdevs:>12} {paths:>5} {vendor:>8} {model:>16} ' \
+                       '{pg80:>22} {rev:>8} {blk_sz_info}'
 
     def __init__(self):
         parser = argparse.ArgumentParser()
@@ -203,7 +204,9 @@ class SASDevicesCLI(object):
 
         for encset in encgroups:
             encinfolist = []
-            kfun = lambda o: int(re.sub("\D", "", o.scsi_generic.name))
+
+            def kfun(o):
+                return int(re.sub("\D", "", o.scsi_generic.name))
             for enc in sorted(encset, key=kfun):
                 snic = ses_get_snic_nickname(enc.scsi_generic.name)
                 if snic:
@@ -227,22 +230,23 @@ class SASDevicesCLI(object):
             cnt = 0
 
             def enclosure_finder(arg):
-                lu, dev_list = arg
-                for sas_ed, scsi_device in dev_list:
-                    blk = scsi_device.block
-                    assert blk
-                    if blk.array_device:
-                        # 'enclosure_device' symlink is present (preferred method)
-                        encl = blk.array_device.enclosure
+                _lu, _dev_list = arg
+                for _sas_ed, _scsi_device in _dev_list:
+                    _blk = _scsi_device.block
+                    assert _blk
+                    if _blk.array_device:
+                        # 'enclosure_device' symlink is present
+                        # (preferred method)
+                        _encl = _blk.array_device.enclosure
                     else:
                         # 'enclosure_device' symlink is absent: use workaround
                         try:
-                            sasdev = sas_ed.sas_device
-                            encl = enclosures[sasdev.attrs.enclosure_identifier]
+                            _sasdev = _sas_ed.sas_device
+                            _encl = enclosures[_sasdev.attrs.enclosure_identifier]
                         except (AttributeError, KeyError):
                             # not an array device
                             continue
-                    if encl in encset:
+                    if _encl in encset:
                         return True
                 return False
 
@@ -251,7 +255,9 @@ class SASDevicesCLI(object):
 
             if self.args.verbose:
                 print(self.FMT_DEVLIST_VERB.format(**self.HDR_DEVLIST_VERB))
-                kfun = lambda o: int(o[1][0][0].sas_device.attrs.bay_identifier)
+
+                def kfun(o):
+                    return int(o[1][0][0].sas_device.attrs.bay_identifier)
                 for lu, devlist in sorted(encdevs, key=kfun):
                     self._print_lu_devlist(lu, devlist, maxpaths)
                     cnt += 1
@@ -265,8 +271,8 @@ class SASDevicesCLI(object):
                                             devinfo.keys())(**devinfo)
                     folded.setdefault(folded_key, []).append(devlist)
                     cnt += 1
-                print("NUM   %12s %12s %6s %6s"  % ('VENDOR', 'MODEL', 'REV',
-                                                    'PATHS'))
+                print("NUM   %12s %12s %6s %6s" % ('VENDOR', 'MODEL', 'REV',
+                                                   'PATHS'))
                 for t, v in folded.items():
                     if maxpaths and t.paths < maxpaths:
                         pathstr = '%s*' % t.paths
@@ -297,6 +303,7 @@ def main():
         sas_devices_cli.print_end_devices(root)
     except KeyError as err:
         print("Not found: %s" % err, file=sys.stderr)
+
 
 if __name__ == '__main__':
     main()

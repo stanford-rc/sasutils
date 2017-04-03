@@ -20,12 +20,11 @@
 Requires sg_ses from sg3_utils (recent version, like 1.77).
 """
 
-__author__ = 'sthiell@stanford.edu (Stephane Thiell)'
-
 import logging
 import re
 import subprocess
 
+__author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,6 +46,7 @@ def ses_get_snic_nickname(sg_name):
         mobj = re.match(r'\s+nickname:\s*([^ ]+)', line)
         if mobj:
             return mobj.group(1)
+
 
 def _ses_get_ed_line(sg_name):
     """Helper function to get element descriptor associated lines."""
@@ -74,6 +74,7 @@ def _ses_get_ed_line(sg_name):
         else:
             yield element_type, descriptor, line.strip()
 
+
 def ses_get_ed_metrics(sg_name):
     """
     Return environment metrics as a dictionary from the SES Element
@@ -87,6 +88,7 @@ def ses_get_ed_metrics(sg_name):
             yield dict((('element_type', element_type),
                         ('descriptor', descriptor), ('key', key),
                         ('value', value), ('unit', unit)))
+
 
 def ses_get_ed_status(sg_name):
     """
