@@ -47,8 +47,8 @@ rm -rf %{buildroot}
 %changelog
 * Wed Mar 29 2017 Mikhail Lesin <mlesin@gmail.com> 0.3.2-1
 - Python 3 port
-  DM support
-  4K devices sizefix
+- DM support
+- 4K devices sizefix
 
 * Mon Feb 20 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.1-1
 - update version

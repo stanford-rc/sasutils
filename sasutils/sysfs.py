@@ -89,6 +89,7 @@ class SysfsNode(object):
 
     def get(self, pathname, default=None, ignore_errors=False, printable=True,
             absolute=False):
+        """get content of a sysfs file"""
         if absolute:
             path = pathname
         else:
@@ -114,6 +115,24 @@ class SysfsNode(object):
             if default is not None:
                 return default
             raise
+
+    def put(self, pathname, value, ignore_errors=False, absolute=False):
+        """write content of a sysfs file entry"""
+        found = False
+        if absolute:
+            path = pathname
+        else:
+            path = join(self.path, pathname)
+        for path in glob.glob(path):
+            try:
+                found = True
+                with open(path, 'w') as fp:
+                    fp.write(str(value))
+            except IOError, exc:
+                if not ignore_errors:
+                    raise
+        if not found and not ignore_errors:
+            raise KeyError('Not found: %s' % path)
 
 
 # For testing
