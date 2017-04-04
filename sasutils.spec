@@ -1,7 +1,7 @@
 %{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
 
 Name:          sasutils
-Version:       0.3.1
+Version:       0.3.2
 Release:       1%{?dist}
 Summary:       Serial Attached SCSI (SAS) Linux utilities
 
@@ -45,6 +45,11 @@ rm -rf %{buildroot}
 %{_bindir}/ses_report
 
 %changelog
+* Wed Mar 29 2017 Mikhail Lesin <mlesin@gmail.com> 0.3.2-1
+- Python 3 port
+  DM support
+  4K devices sizefix
+
 * Mon Feb 20 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.1-1
 - update version
 

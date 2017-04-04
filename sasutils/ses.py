@@ -20,12 +20,11 @@
 Requires sg_ses from sg3_utils (recent version, like 1.77).
 """
 
-__author__ = 'sthiell@stanford.edu (Stephane Thiell)'
-
 import logging
 import re
 import subprocess
 
+__author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,14 +38,15 @@ def ses_get_snic_nickname(sg_name):
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE).communicate()
 
-    for line in stderr.splitlines():
+    for line in stderr.decode("utf-8").splitlines():
         LOGGER.debug('ses_get_snic_nickname: sg_ses(stderr): %s', line)
 
-    for line in stdout.splitlines():
+    for line in stdout.decode("utf-8").splitlines():
         LOGGER.debug('ses_get_snic_nickname: sg_ses: %s', line)
         mobj = re.match(r'\s+nickname:\s*([^ ]+)', line)
         if mobj:
             return mobj.group(1)
+
 
 def _ses_get_ed_line(sg_name):
     """Helper function to get element descriptor associated lines."""
@@ -56,13 +56,13 @@ def _ses_get_ed_line(sg_name):
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE).communicate()
 
-    for line in stderr.splitlines():
+    for line in stderr.decode("utf-8").splitlines():
         LOGGER.debug('ses_get_ed_metrics: sg_ses(stderr): %s', line)
 
     element_type = None
     descriptor = None
 
-    for line in stdout.splitlines():
+    for line in stdout.decode("utf-8").splitlines():
         LOGGER.debug('ses_get_ed_metrics: sg_ses: %s', line)
         if line and line[0] != ' ' and 'Element type:' in line:
             # Voltage  3.30V [6,0]  Element type: Voltage sensor
@@ -73,6 +73,7 @@ def _ses_get_ed_line(sg_name):
                 descriptor = descriptor.replace(' ', '_').replace('.', '_')
         else:
             yield element_type, descriptor, line.strip()
+
 
 def ses_get_ed_metrics(sg_name):
     """
@@ -87,6 +88,7 @@ def ses_get_ed_metrics(sg_name):
             yield dict((('element_type', element_type),
                         ('descriptor', descriptor), ('key', key),
                         ('value', value), ('unit', unit)))
+
 
 def ses_get_ed_status(sg_name):
     """

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 #
 # Copyright (C) 2016, 2017
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -17,9 +17,8 @@
 # limitations under the License.
 
 from setuptools import setup, find_packages
-import sys
 
-VERSION = '0.3.1'
+VERSION = '0.3.2'
 
 setup(name='sasutils',
       version=VERSION,
@@ -52,4 +51,4 @@ setup(name='sasutils',
               'ses_report=sasutils.cli.ses_report:main'
           ],
       },
-     )
+      )

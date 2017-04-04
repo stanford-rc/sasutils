@@ -40,11 +40,11 @@ Requires smp_utils.
     phy:48 negot:D addr:0x50012be000083c7d rphy:0 devtype:V iproto:SMP tproto:SSP speed:12
 """
 
-__author__ = 'sthiell@stanford.edu (Stephane Thiell)'
-
 import re
 from subprocess import check_output
-from sysfs import SysfsObject
+from .sysfs import SysfsObject
+
+__author__ = 'sthiell@stanford.edu (Stephane Thiell)'
 
 
 class PhyBaseDesc(object):
@@ -64,13 +64,15 @@ class PhyBaseDesc(object):
                                  self.phy)
 
     def __str__(self):
-        return 'phy:{phy} routing:{routing} negot:{negot}'.format(**self.__dict__)
+        return 'phy:{phy} routing:{routing} negot:{negot}'.format(
+            **self.__dict__)
 
 
 class PhyDesc(PhyBaseDesc):
     """SAS Phy description."""
 
-    def __init__(self, phy, routing, addr, rphy, devtype, iproto, tproto, speed):
+    def __init__(self, phy, routing, addr, rphy, devtype, iproto, tproto,
+                 speed):
         """Constructor for PhyDesc.
 
         Args:
@@ -113,7 +115,8 @@ class SMPDiscover(object):
         # phy  12:U:attached:[5001636001a42e3f:13 exp t(SMP)]  12 Gbps
         # phy  28:U:attached:[500605b00ab06f40:07  i(SSP+STP+SMP)]  12 Gbps
         # phy  48:D:attached:[50012be000083c7d:00  V i(SMP) t(SSP)]  12 Gbps
-        pattern = r'^\s*phy\s+(\d+):([A-Z]):attached:\[(\w+):(\d+)\s+(?:(\w+)\s+)*' \
+        pattern = r'^\s*phy\s+(\d+):([A-Z]):attached:\[(\w+):(\d+)\s+' \
+                  r'(?:(\w+)\s+)*' \
                   r'[i]*(?:\(([a-zA-Z+]+)\))*\s*[t]*(?:\(([a-zA-Z+]+)\))*\]' \
                   r'\s+(\d+)\s+Gbps'
 
@@ -124,8 +127,8 @@ class SMPDiscover(object):
         pattern = r'^\s*phy\s+(\d+):([A-Z]):([\w\s]+)$'
 
         for mobj in re.finditer(pattern, output, flags=re.MULTILINE):
-            self._detached_phys[int(mobj.group(1))] = PhyBaseDesc(*mobj.groups())
-
+            self._detached_phys[int(mobj.group(1))] = PhyBaseDesc(
+                *mobj.groups())
 
     def __repr__(self):
         return '<%s.%s "%s">' % (self.__module__, self.__class__.__name__,

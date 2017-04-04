@@ -15,9 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from os.path import basename
-
-from sasutils.scsi import ArrayDevice, BlockDevice, SCSIDevice, SCSIHost
+from sasutils.scsi import BlockDevice, SCSIDevice, SCSIHost
 from sasutils.sysfs import SysfsDevice
 
 
@@ -26,13 +24,11 @@ from sasutils.sysfs import SysfsDevice
 #
 
 class SASPhy(SysfsDevice):
-
     def __init__(self, device, subsys='sas_phy'):
         SysfsDevice.__init__(self, device, subsys)
 
 
 class SASPort(SysfsDevice):
-
     def __init__(self, device, subsys='sas_port'):
         SysfsDevice.__init__(self, device, subsys)
         self.expanders = []
@@ -47,12 +43,12 @@ class SASPort(SysfsDevice):
         for end_device in end_devices:
             self.end_devices.append(SASEndDevice(end_device))
 
-        expanders  = self.device.glob('expander-*')
+        expanders = self.device.glob('expander-*')
         for expander in expanders:
             self.expanders.append(SASExpander(expander))
 
-class SASNode(SysfsDevice):
 
+class SASNode(SysfsDevice):
     def __init__(self, device, subsys=None):
         SysfsDevice.__init__(self, device, subsys)
         self.phys = []
@@ -60,13 +56,15 @@ class SASNode(SysfsDevice):
 
         ports = self.device.glob('port-*')
         for port in ports:
-            #print('node has port %s' % port.path)
-            self.ports.append(SASPort(port)) #port.node(port))) #'sas_port/port-*')))
+            # print('node has port %s' % port.path)
+            self.ports.append(
+                SASPort(port))  # port.node(port))) #'sas_port/port-*')))
 
         phys = self.device.glob('phy-*')
         for phy in phys:
-            #print('node has phy %s' % phy.path)
-            self.phys.append(SASPhy(phy)) #.node(phy))) #phy.node('sas_phy/phy-*')))
+            # print('node has phy %s' % phy.path)
+            self.phys.append(
+                SASPhy(phy))  # .node(phy))) #phy.node('sas_phy/phy-*')))
 
     def __repr__(self):
         return '<%s.%s %s phys=%d ports=%d>' % (self.__module__,
@@ -86,8 +84,8 @@ class SASNode(SysfsDevice):
                 if int(end_device.scsi_device.attrs.type) == int(device_type):
                     yield end_device
 
-class SASHost(SASNode):
 
+class SASHost(SASNode):
     def __init__(self, device, subsys='sas_host'):
         SASNode.__init__(self, device, subsys)
         self.scsi_host = SCSIHost(device)
@@ -96,24 +94,25 @@ class SASHost(SASNode):
         return '<%s.%s %s>' % (self.__module__, self.__class__.__name__,
                                self.__dict__)
 
-class SASExpander(SASNode):
 
+class SASExpander(SASNode):
     def __init__(self, device, subsys='sas_expander'):
         SASNode.__init__(self, device, subsys)
         self.sas_device = SASDevice(device)
 
-class SASDevice(SysfsDevice):
 
+class SASDevice(SysfsDevice):
     def __init__(self, device, subsys='sas_device'):
         SysfsDevice.__init__(self, device, subsys)
 
-class SASEndDevice(SysfsDevice):
 
+class SASEndDevice(SysfsDevice):
     def __init__(self, device, subsys='sas_end_device'):
         SysfsDevice.__init__(self, device, subsys)
         self.sas_device = SASDevice(device)
         # a single SAS end device can handle several SCSI targets
-        self.targets = [SCSIDevice(dev) for dev in device.glob('target*/*[0-9]')]
+        self.targets = [SCSIDevice(dev) for dev in
+                        device.glob('target*/*[0-9]')]
 
 
 #

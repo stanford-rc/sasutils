@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #
 # Copyright (C) 2016
 #      The Board of Trustees of the Leland Stanford Junior University
@@ -20,7 +20,6 @@
 """
 ses_report - SES status and metrics reporting utility
 """
-
 
 from __future__ import print_function
 import argparse
@@ -57,6 +56,7 @@ def _init_argparser():
     group.add_argument('-j', '--json', action='store_true',
                        help='alternative JSON output mode')
     return parser.parse_args()
+
 
 def ses_report():
     """ses_report command-line"""
@@ -114,6 +114,7 @@ def ses_report():
     if pargs.json:
         print(json.dumps(json_encl_dict, sort_keys=True, indent=4))
 
+
 def main():
     """console_scripts entry point for ses_report"""
     try:
@@ -121,6 +122,7 @@ def main():
     except KeyError as err:
         print("Not found: {0}".format(err), file=sys.stderr)
         sys.exit(1)
+
 
 if __name__ == '__main__':
     main()
