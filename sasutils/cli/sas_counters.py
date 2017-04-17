@@ -60,8 +60,11 @@ class SDNode(object):
         path.reverse()
         keybase = '.'.join(path).replace(' ', '_')
         # some counters in sysfs are hex numbers
-        if type(value) is str and value.startswith('0x'):
-            value = int(value, 16)
+        try:
+            if value.startswith('0x'):
+                value = int(value, 16)
+        except AttributeError:
+            pass
         print('%s.%s %s %d' % (keybase, key, value, time.time()))
 
     def add_child(self, sdclass, parent, baseobj, name=None):
