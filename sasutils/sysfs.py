@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016
+# Copyright (C) 2016, 2017
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
@@ -128,7 +128,7 @@ class SysfsNode(object):
                 found = True
                 with open(path, 'w') as fp:
                     fp.write(str(value))
-            except IOError, exc:
+            except IOError:
                 if not ignore_errors:
                     raise
         if not found and not ignore_errors:
