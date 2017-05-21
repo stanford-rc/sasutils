@@ -143,7 +143,7 @@ class SDHostNode(SDNode):
                     sortv[1] = -int(p.end_devices[0].targets[0].attrs.type)
                     sortv[2] = int(
                         p.end_devices[0].sas_device.attrs.bay_identifier)
-            except (AttributeError, IndexError):
+            except (AttributeError, IndexError, ValueError):
                 pass
             return sortv
 
