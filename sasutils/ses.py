@@ -34,9 +34,13 @@ def ses_get_snic_nickname(sg_name):
     # SES nickname is not available through sysfs, use sg_ses tool instead
     cmdargs = ['sg_ses', '--page=snic', '-I0', '/dev/' + sg_name]
     LOGGER.debug('ses_get_snic_nickname: executing: %s', cmdargs)
-    stdout, stderr = subprocess.Popen(cmdargs,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE).communicate()
+    try:
+        stdout, stderr = subprocess.Popen(cmdargs,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+    except OSError as err:
+        LOGGER.warning('ses_get_snic_nickname: %s', err)
+        return None
 
     for line in stderr.decode("utf-8").splitlines():
         LOGGER.debug('ses_get_snic_nickname: sg_ses(stderr): %s', line)

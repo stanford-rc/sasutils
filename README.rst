@@ -24,6 +24,11 @@ Also, two "zeroconf" udev scripts for use in udev rules that create friendly dev
 * sas_mpath_snic_alias
 * sas_sd_snic_alias
 
+.. note::
+
+       While **sasutils** gets most of the system data from sysfs (/sys), `sg_ses` (available in sg3_utils or sg3-utils)
+       and `smp_discover` (available in smp_utils or smp-utils) are required for some SES features to work.
+
 sas_counters
 ------------
 
