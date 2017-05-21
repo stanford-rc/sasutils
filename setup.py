@@ -18,7 +18,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = '0.3.2'
+VERSION = '0.3.3'
 
 setup(name='sasutils',
       version=VERSION,
@@ -32,7 +32,7 @@ setup(name='sasutils',
       description='Serial Attached SCSI (SAS) Linux utilities',
       long_description=open('README.rst').read(),
       classifiers=[
-          'Development Status :: 4 - Beta',
+          'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
           'Intended Audience :: System Administrators',
           'Operating System :: POSIX :: Linux',
