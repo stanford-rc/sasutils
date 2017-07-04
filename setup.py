@@ -18,7 +18,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = '0.3.3'
+VERSION = '0.3.4'
 
 setup(name='sasutils',
       version=VERSION,
@@ -35,6 +35,7 @@ setup(name='sasutils',
           'Development Status :: 5 - Production/Stable',
           'Environment :: Console',
           'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: Apache Software License',
           'Operating System :: POSIX :: Linux',
           'Programming Language :: Python',
           'Programming Language :: Python :: 2.6',
@@ -52,4 +53,5 @@ setup(name='sasutils',
               'ses_report=sasutils.cli.ses_report:main'
           ],
       },
+      data_files=[('', ['LICENSE.txt'])],
       )
