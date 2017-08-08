@@ -100,7 +100,7 @@ class SDHostNode(SDNode):
                     sortv[1] = -int(port_n.end_devices[0].targets[0].attrs.type)
                     sortv[2] = int(port_n.end_devices[0].sas_device.attrs
                                    .bay_identifier)
-            except RuntimeError:
+            except (RuntimeError, ValueError):
                 pass
             return sortv
 
