@@ -1,20 +1,21 @@
-%{!?python_sitelib: %global python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")}
-
 Name:           sasutils
 Version:        0.3.4
 Release:        1%{?dist}
-Summary:        Serial Attached SCSI (SAS) Linux utilities
+Summary:        Serial Attached SCSI (SAS) utilities
 
 Group:          System Environment/Base
 License:        ASL 2.0
 URL:            https://github.com/stanford-rc/sasutils
 Source0:        https://files.pythonhosted.org/packages/source/s/%{name}/%{name}-%{version}.tar.gz
 
-BuildRoot:      %(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 BuildArch:      noarch
-BuildRequires:  python3-devel python3-setuptools
-Requires:       python3-setuptools sg3_utils smp_utils
-Provides:       python3-sasutils
+BuildRequires:  python3-devel
+BuildRequires:  python3-setuptools
+Requires:       python3-setuptools
+Requires:       sg3_utils
+Requires:       smp_utils
+
+Provides:       python3-%{name} = %{version}
 %{?python_provide:%python_provide python-sasutils}
 
 %description
@@ -25,33 +26,28 @@ administration of Serial Attached SCSI (SAS) fabrics.
 %setup -q
 
 %build
-%{__python3} setup.py build
+%py3_build
 
 %install
-rm -rf %{buildroot}
-%{__python3} setup.py install -O1 --skip-build --root %{buildroot}
-
-%clean
-rm -rf %{buildroot}
+%py3_install
 
 %files
-%defattr(-,root,root,-)
-%license LICENSE.txt
-%doc README.rst
-%{python3_sitelib}/sasutils/
-%{python3_sitelib}/sasutils-*-py?.?.egg-info
 %{_bindir}/sas_counters
 %{_bindir}/sas_devices
 %{_bindir}/sas_discover
 %{_bindir}/sas_mpath_snic_alias
 %{_bindir}/sas_sd_snic_alias
 %{_bindir}/ses_report
+%{python3_sitelib}/sasutils/
+%{python3_sitelib}/sasutils-*-py?.?.egg-info
+%doc README.rst
+%license LICENSE.txt
 
 %changelog
 * Tue Jul  4 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.4-1
 - build against python3 only
 - install LICENSE.txt file
-- use %python_provide macro and update to follow Fedora packaging guidelines
+- use python_provide macro and update to follow Fedora packaging guidelines
 
 * Sat May 20 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.3-1
 - update version (bug fixes)
