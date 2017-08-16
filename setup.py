@@ -53,5 +53,4 @@ setup(name='sasutils',
               'ses_report=sasutils.cli.ses_report:main'
           ],
       },
-      data_files=[('', ['LICENSE.txt'])],
       )
