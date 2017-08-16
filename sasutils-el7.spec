@@ -1,5 +1,5 @@
 Name:           sasutils
-Version:        0.3.4
+Version:        0.3.5
 Release:        1%{?dist}
 Summary:        Serial Attached SCSI (SAS) utilities
 
@@ -44,6 +44,9 @@ administration of Serial Attached SCSI (SAS) fabrics.
 %license LICENSE.txt
 
 %changelog
+* Wed Aug 16 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.5-1
+- packaging improvements
+
 * Tue Jul  4 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.4-1
 - build against python3 only
 - install LICENSE.txt file
