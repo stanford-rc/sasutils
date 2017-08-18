@@ -1,5 +1,5 @@
 Name:           sasutils
-Version:        0.3.6
+Version:        0.3.7
 Release:        1%{?dist}
 Summary:        Serial Attached SCSI (SAS) utilities
 
@@ -53,7 +53,7 @@ install -p -m 0644 doc/man/man1/ses_report.1 %{buildroot}/%{_mandir}/man1/
 %license LICENSE.txt
 
 %changelog
-* Fri Aug 18 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.6-1
+* Fri Aug 18 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.7-1
 - added man pages
 
 * Wed Aug 16 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.5-1
