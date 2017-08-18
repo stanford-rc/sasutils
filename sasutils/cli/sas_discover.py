@@ -379,17 +379,18 @@ def main():
                         help='Print I/O counters')
     pargs = parser.parse_args()
 
-    # print short hostname as tree root node
-    root_name = socket.gethostname().split('.')[0]
-    root_obj = sysfs.node('class').node('sas_host')
-
-    disp = {'verbose': pargs.verbose, 'addr': pargs.addr,
-            'devices': pargs.devices, 'counters': pargs.counters}
     try:
+        # print short hostname as tree root node
+        root_name = socket.gethostname().split('.')[0]
+        root_obj = sysfs.node('class').node('sas_host')
+        disp = {'verbose': pargs.verbose, 'addr': pargs.addr,
+                'devices': pargs.devices, 'counters': pargs.counters}
         root = SDRootNode(name=root_name, baseobj=root_obj, disp=disp)
         root.print_tree()
     except IOError:
         pass
+    except KeyError as err:
+        print("Not found: %s" % err, file=sys.stderr)
 
 
 if __name__ == '__main__':

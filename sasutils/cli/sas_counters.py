@@ -202,13 +202,15 @@ def main():
                              ' default is "sasutils.sas_counters")')
     pargs = parser.parse_args()
     pfx = pargs.prefix.strip('.')
-    # print short hostname as tree root node
-    root_name = socket.gethostname().split('.')[0]
-    root_obj = sysfs.node('class').node('sas_host')
     try:
+        # print short hostname as tree root node
+        root_name = socket.gethostname().split('.')[0]
+        root_obj = sysfs.node('class').node('sas_host')
         SDRootNode(root_obj, name=root_name, prefix=pfx).print_tree()
     except IOError:
         pass
+    except KeyError as err:
+        print("Not found: %s" % err, file=sys.stderr)
 
 
 if __name__ == '__main__':
