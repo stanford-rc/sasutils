@@ -1,0 +1,75 @@
+============
+sas_discover
+============
+
+-------------------------------------------
+display Serial Attached SCSI (SAS) topology
+-------------------------------------------
+
+:Author: Stephane Thiell <sthiell@stanford.edu>
+:Date:   2017-08-16
+:Copyright: Apache License Version 2.0
+:Version: 0.3.5
+:Manual section: 1
+:Manual group: sasutils
+
+
+SYNOPSIS
+========
+
+``sas_discover [-h] [--verbose] [--addr] [--devices] [--counters]``
+
+DESCRIPTION
+===========
+
+``sas_discover`` displays the SAS topology from the host initiator(s), through
+any SAS expanders up to the SAS targets. Each link usually represents a SAS
+port connection, whether it uses one or more PHYs.  The number of PHYs per port
+is explicitly shown if greater than one (eg. "--4x--" for a 4-PHY wide port).
+Please note that by default, ``sas_discover`` tries to fold common devices
+(like disks), like in the example below:
+
+:-- 60 x end_device -- disk:
+    60 x 1-PHY links, each connected to a SAS end_device target of SCSI type *disk*
+
+Host initiators, expanders and end devices are labelled with the same name used
+in sysfs. If `-v` is provided, more descriptive information will be displayed,
+but the topology will stay folded whenever possible. ``sas_discover -v`` will
+also print SES-2 subenclosure nicknames, which are useful to identify JBODs/SIMs
+and external SAS switches connected to the topology.
+
+Use `-vv` to unfold the topology and display more information (eg. model, size,
+bay identifier in enclosure).
+
+Use `-vvv` to display additional low-level information for each SAS end device.
+
+Add `--addr` to also display the SAS address for each SAS component found in the
+topology.
+
+OPTIONS
+=======
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --verbose, -v  Verbosity level, repeat multiple times!
+  --addr         Print SAS addresses
+  --devices      Print associated devices
+  --counters     Print I/O counters
+
+
+EXIT STATUS
+===========
+
+An exit status of zero indicates success of the command, and failure otherwise.
+
+SEE ALSO
+========
+
+``sas_counters``\(1), ``sas_devices``\(1), ``ses_report``\(1)
+
+BUG REPORTS
+===========
+
+Use the following URL to submit a bug report or feedback:
+
+  https://github.com/stanford-rc/sasutils/issues

@@ -1,5 +1,5 @@
 Name:           sasutils
-Version:        0.3.5
+Version:        0.3.6
 Release:        1%{?dist}
 Summary:        Serial Attached SCSI (SAS) utilities
 
@@ -30,6 +30,11 @@ administration of Serial Attached SCSI (SAS) fabrics.
 
 %install
 %py3_install
+install -d %{buildroot}/%{_mandir}/man1
+install -p -m 0644 doc/man/man1/sas_counters.1 %{buildroot}/%{_mandir}/man1/
+install -p -m 0644 doc/man/man1/sas_devices.1 %{buildroot}/%{_mandir}/man1/
+install -p -m 0644 doc/man/man1/sas_discover.1 %{buildroot}/%{_mandir}/man1/
+install -p -m 0644 doc/man/man1/ses_report.1 %{buildroot}/%{_mandir}/man1/
 
 %files
 %{_bindir}/sas_counters
@@ -40,10 +45,17 @@ administration of Serial Attached SCSI (SAS) fabrics.
 %{_bindir}/ses_report
 %{python3_sitelib}/sasutils/
 %{python3_sitelib}/sasutils-*-py?.?.egg-info
+%{_mandir}/man1/sas_counters.1*
+%{_mandir}/man1/sas_devices.1*
+%{_mandir}/man1/sas_discover.1*
+%{_mandir}/man1/ses_report.1*
 %doc README.rst
 %license LICENSE.txt
 
 %changelog
+* Fri Aug 18 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.6-1
+- added man pages
+
 * Wed Aug 16 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.5-1
 - packaging improvements
 

@@ -1,0 +1,65 @@
+==========
+ses_report
+==========
+
+------------------------------------------------------------------
+SCSI Enclosure Services (SES) status and metrics reporting utility
+------------------------------------------------------------------
+
+:Author: Stephane Thiell <sthiell@stanford.edu>
+:Date:   2017-08-16
+:Copyright: Apache License Version 2.0
+:Version: 0.3.5
+:Manual section: 1
+:Manual group: sasutils
+
+
+SYNOPSIS
+========
+
+``ses_report [-h] [-d] (-c | -s) [--prefix PREFIX] [-j]``
+
+DESCRIPTION
+===========
+
+SES status and environmental metrics.
+
+Used with `-c`, ``ses_report`` will search for enclosure environmental metrics
+and then output results in a format suitable for Carbon/Graphite.
+
+Alternatively, you can Use `-s` to get the status of all detected SES Element
+Descriptors.
+
+``ses_report`` has support for SES-2 enclosure nickname.
+
+OPTIONS
+=======
+
+optional arguments:
+  -h, --help       show this help message and exit
+  -d, --debug      enable debugging
+  -c, --carbon     output SES Element descriptors metrics in a format suitable
+                   for Carbon/Graphite
+  -s, --status     output status found in SES Element descriptors
+
+output options:
+  --prefix PREFIX  carbon prefix (example: "datacenter.cluster", default is
+                   "sasutils.ses_report")
+  -j, --json       alternative JSON output mode
+
+EXIT STATUS
+===========
+
+An exit status of zero indicates success of the command, and failure otherwise.
+
+SEE ALSO
+========
+
+``sas_counters``\(1), ``sas_devices``\(1), ``sas_discover``\(1)
+
+BUG REPORTS
+===========
+
+Use the following URL to submit a bug report or feedback:
+
+  https://github.com/stanford-rc/sasutils/issues

@@ -1,0 +1,52 @@
+============
+sas_counters
+============
+
+----------------------------------------
+show Serial Attached SCSI (SAS) counters
+----------------------------------------
+
+:Author: Stephane Thiell <sthiell@stanford.edu>
+:Date:   2017-08-16
+:Copyright: Apache License Version 2.0
+:Version: 0.3.5
+:Manual section: 1
+:Manual group: sasutils
+
+
+SYNOPSIS
+========
+
+``sas_counters [-h] [--prefix PREFIX]``
+
+DESCRIPTION
+===========
+
+``sas_counters`` reports Serial Attached SCSI (SAS), SCSI Enclosure Services
+(SES), SCSI devices I/O and phy error counters organized in an output suitable
+for Carbon/Graphite with SAS topology information.
+
+OPTIONS
+=======
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --prefix PREFIX  carbon prefix (example: "datacenter.cluster", default is
+                   "sasutils.sas_counters")
+
+EXIT STATUS
+===========
+
+An exit status of zero indicates success of the command, and failure otherwise.
+
+SEE ALSO
+========
+
+``sas_devices``\(1), ``sas_discover``\(1), ``ses_report``\(1)
+
+BUG REPORTS
+===========
+
+Use the following URL to submit a bug report or feedback:
+
+  https://github.com/stanford-rc/sasutils/issues
