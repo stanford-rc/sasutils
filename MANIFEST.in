@@ -1,2 +1,3 @@
+include LICENSE.txt
 include doc/man/man1/*
 include doc/txt/*
