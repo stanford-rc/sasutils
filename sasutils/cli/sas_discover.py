@@ -21,6 +21,7 @@ from __future__ import print_function
 import argparse
 from itertools import groupby
 import socket
+import sys
 
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
