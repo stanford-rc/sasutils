@@ -1,6 +1,5 @@
-#!/usr/bin/env python
 #
-# Copyright (C) 2016
+# Copyright (C) 2016, 2017
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #

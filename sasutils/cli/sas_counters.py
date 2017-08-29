@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 #
 # Copyright (C) 2017 Board of Trustees, Leland Stanford Jr. University
-#
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
