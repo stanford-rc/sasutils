@@ -93,11 +93,13 @@ class SDHostNode(SDNode):
             """helper sort function to return expanders first, then order by
             scsi device type and bay identifier"""
             if len(port_n.expanders) > 0:
-                return 1, 0, 0
+                return [1, 0, 0]
             sortv = [0, 0, 0]  # exp?, -type, bay
             try:
                 if len(port_n.end_devices) > 0:
-                    sortv[1] = -int(port_n.end_devices[0].targets[0].attrs.type)
+                    if len(port_n.end_devices[0].targets) > 0:
+                        sortv[1] = -int(port_n.end_devices[0].targets[0].attrs
+                                        .type)
                     sortv[2] = int(port_n.end_devices[0].sas_device.attrs
                                    .bay_identifier)
             except (RuntimeError, ValueError):
