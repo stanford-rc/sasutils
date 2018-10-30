@@ -159,6 +159,10 @@ class SASDevicesCLI(object):
                         lu = vpd_decode_pg83_lu(pg83)
                     except AttributeError:
                         lu = vpd_get_page83_lu(scsi_device.block.name)
+                    except TypeError:
+                        lu = 'Error-%s' % scsi_device.block.name
+                        print('Error: %s vpd_pg83="%s"' % (scsi_device.block,
+                              scsi_device.attrs.vpd_pg83), file=sys.stderr)
 
                     devmap.setdefault(lu, []).append((sas_end_device,
                                                       scsi_device))
