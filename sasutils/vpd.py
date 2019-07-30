@@ -17,6 +17,7 @@
 
 # Inspired from decode_dev_ids() in sg3_utils/src/sg_vpd.c
 
+import os
 from struct import unpack_from
 import subprocess
 
@@ -59,6 +60,8 @@ def vpd_get_page80_sn(blkdev):
     """
     Get page 0x80 Serial Number using external command.
     """
+    env = os.environ.copy()
+    env["PATH"] = "/lib/udev:" + env["PATH"]
     cmdargs = ['scsi_id', '--page=0x80', '--whitelisted',
                '--device=/dev/' + blkdev]
     output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
@@ -69,7 +72,9 @@ def vpd_get_page83_lu(blkdev):
     """
     Get page 0x83 Logical Unit using external command.
     """
+    env = os.environ.copy()
+    env["PATH"] = "/lib/udev:" + env["PATH"]
     cmdargs = ['scsi_id', '--page=0x83', '--whitelisted',
                '--device=/dev/' + blkdev]
-    output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, env=env).communicate()[0]
     return output.decode("utf-8").rstrip()
