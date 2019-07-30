@@ -21,6 +21,7 @@ import argparse
 from collections import namedtuple
 from itertools import groupby
 from operator import attrgetter
+import struct
 import sys
 import re
 
@@ -157,7 +158,7 @@ class SASDevicesCLI(object):
                     try:
                         pg83 = bytes(scsi_device.attrs.vpd_pg83)
                         lu = vpd_decode_pg83_lu(pg83)
-                    except AttributeError:
+                    except (AttributeError, struct.error):
                         lu = vpd_get_page83_lu(scsi_device.block.name)
                     except TypeError:
                         lu = 'Error-%s' % scsi_device.block.name
