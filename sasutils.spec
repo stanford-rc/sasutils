@@ -1,11 +1,11 @@
 Name:           sasutils
-Version:        0.3.9
+Version:        0.3.10
 Release:        1%{?dist}
 Summary:        Serial Attached SCSI (SAS) utilities
 
 License:        ASL 2.0
 URL:            https://github.com/stanford-rc/sasutils
-Source0:        https://files.pythonhosted.org/packages/source/s/%{name}/%{name}-%{version}.tar.gz
+Source0:        https://github.com/stanford-rc/sasutils/archive/v%{version}/%{name}-%{version}.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python3-devel
@@ -51,6 +51,10 @@ install -p -m 0644 doc/man/man1/ses_report.1 %{buildroot}/%{_mandir}/man1/
 %license LICENSE.txt
 
 %changelog
+* Sun Dec 08 2019 Stephane Thiell <sthiell@stanford.edu> 0.3.10-1
+- update version
+- update Source to download from GitHub directly
+
 * Tue Aug 29 2017 Stephane Thiell <sthiell@stanford.edu> 0.3.9-1
 - update version
 
