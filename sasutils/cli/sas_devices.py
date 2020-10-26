@@ -108,7 +108,7 @@ class SASDevicesCLI(object):
             # Serial number
             try:
                 pg80 = scsi_device.attrs.vpd_pg80
-                res['pg80'] = pg80[4:].decode("utf-8")
+                res['pg80'] = pg80[4:].decode("utf-8", errors='backslashreplace')
             except AttributeError:
                 pg80 = vpd_get_page80_sn(scsi_device.block.name)
                 res['pg80'] = pg80
