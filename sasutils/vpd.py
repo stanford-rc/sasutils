@@ -65,7 +65,7 @@ def vpd_get_page80_sn(blkdev):
     cmdargs = ['scsi_id', '--page=0x80', '--whitelisted',
                '--device=/dev/' + blkdev]
     output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
-    return output.decode("utf-8").rstrip().split()[-1]
+    return output.decode("utf-8", errors='backslashreplace').rstrip().split()[-1]
 
 
 def vpd_get_page83_lu(blkdev):
@@ -77,4 +77,4 @@ def vpd_get_page83_lu(blkdev):
     cmdargs = ['scsi_id', '--page=0x83', '--whitelisted',
                '--device=/dev/' + blkdev]
     output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, env=env).communicate()[0]
-    return output.decode("utf-8").rstrip()
+    return output.decode("utf-8", errors='backslashreplace').rstrip()

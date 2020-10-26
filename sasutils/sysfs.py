@@ -79,7 +79,7 @@ class SysfsNode(object):
                     with open(path, 'rb') as fp:
                         data = fp.read().strip()
                         try:
-                            data = data.decode("utf-8")
+                            data = data.decode("utf-8", errors='backslashreplace')
                         except UnicodeDecodeError:
                             pass
                         yield data

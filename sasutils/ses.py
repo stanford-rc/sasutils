@@ -42,10 +42,10 @@ def ses_get_snic_nickname(sg_name):
         LOGGER.warning('ses_get_snic_nickname: %s', err)
         return None
 
-    for line in stderr.decode("utf-8").splitlines():
+    for line in stderr.decode("utf-8", errors='backslashreplace').splitlines():
         LOGGER.debug('ses_get_snic_nickname: sg_ses(stderr): %s', line)
 
-    for line in stdout.decode("utf-8").splitlines():
+    for line in stdout.decode("utf-8", errors='backslashreplace').splitlines():
         LOGGER.debug('ses_get_snic_nickname: sg_ses: %s', line)
         mobj = re.match(r'\s+nickname:\s*([^ ]+)', line)
         if mobj:
@@ -60,13 +60,13 @@ def _ses_get_ed_line(sg_name):
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE).communicate()
 
-    for line in stderr.decode("utf-8").splitlines():
+    for line in stderr.decode("utf-8", errors='backslashreplace').splitlines():
         LOGGER.debug('ses_get_ed_metrics: sg_ses(stderr): %s', line)
 
     element_type = None
     descriptor = None
 
-    for line in stdout.decode("utf-8").splitlines():
+    for line in stdout.decode("utf-8", errors='backslashreplace').splitlines():
         LOGGER.debug('ses_get_ed_metrics: sg_ses: %s', line)
         if line and line[0] != ' ' and 'Element type:' in line:
             # Voltage  3.30V [6,0]  Element type: Voltage sensor
