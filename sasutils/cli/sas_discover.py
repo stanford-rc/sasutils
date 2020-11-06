@@ -21,7 +21,9 @@ import argparse
 from itertools import groupby
 import socket
 import sys
+import re
 
+from collections import Counter
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.scsi import MAP_TYPES, TYPE_ENCLOSURE
@@ -38,10 +40,11 @@ def format_attrs(attrlist, attrs):
 class SDNode(object):
     gatherme = False
 
-    def __init__(self, name, baseobj, nphys=0, depth=0, disp=None, prinfo=None):
+    def __init__(self, name, baseobj, nphys=0, speedstr='', depth=0, disp=None, prinfo=None):
         self.name = name
         self.baseobj = baseobj
         self.children = []
+        self.speedstr = speedstr
         self.nphys = nphys
         self.depth = depth
         self.disp = disp
@@ -93,12 +96,12 @@ class SDNode(object):
             self._prompt = self.gen_prompt()
         return self._prompt
 
-    def add_child(self, sdclass, baseobj, name=None, nphys=0, last=False):
+    def add_child(self, sdclass, baseobj, name=None, nphys=0, speedstr='', last=False):
         if not name:
             baseobjname = baseobj.name  # mandatory when name not provided
         else:
             baseobjname = name
-        self.children.append(sdclass(baseobjname, baseobj, nphys,
+        self.children.append(sdclass(baseobjname, baseobj, nphys, speedstr,
                                      self.depth + 1, self.disp,
                                      self.adv_prompt(self.proffset, last)))
 
@@ -114,11 +117,32 @@ class SDNode(object):
         self.children = sorted(self.children, key=lambda x: x.gathergrp())
         groups = [(group, list(children)) for group, children
                   in groupby(self.children, lambda x: x.gathergrp())]
+
         for index, (group, children) in enumerate(groups):
             last = bool(index == len(groups) - 1)
             prompt = self.gen_prompt(self.adv_prompt(last=last))
-            print('%s %2d x %s' % (prompt, len(list(children)), group))
 
+            speed_info = ''
+            if self.disp.get('verbose') > 0:
+                speedstr = ''
+                speeds = []
+                for child in children:
+                    if len(list(children)) == 1:
+                        speeds.append(re.sub(r'[0-9]+x', '', child.speedstr))
+                    else:
+                        speeds.append(child.speedstr)
+                counts = Counter(speeds)
+                first = True
+                for speed in counts:
+                    if first:
+                        speedstr = '%dx%s' % (counts[speed], speed)
+                        first = False
+                    else:
+                        speedstr = '%s, %dx%s' % (speedstr, counts[speed], speed)
+
+                speed_info = ' (%s)' % (speedstr)
+
+            print('%s %2d x %s%s' % (prompt, len(list(children)), group, speed_info))
 
 class SDRootNode(SDNode):
     def resolve(self):
@@ -151,11 +175,24 @@ class SDHostNode(SDNode):
         ports = sorted(self.baseobj.ports, key=portsortfunc)
         for index, port in enumerate(ports):
             nphys = len(port.phys)
+            speedstr = ''
+            speeds = []
+            for phy in port.phys:
+                speeds.append(phy.attrs.negotiated_linkrate)
+            counts = Counter(speeds)
+            first = True
+            for speed in counts:
+                if first:
+                    speedstr = '%dx%s' % (counts[speed], speed)
+                    first = False
+                else:
+                    speedstr = '%s, %dx%s' % (speedstr, counts[speed], speed)
+
             last = bool(index == len(self.baseobj.ports) - 1)
             for expander in port.expanders:
-                self.add_child(SDExpanderNode, expander, nphys=nphys, last=last)
+                self.add_child(SDExpanderNode, expander, nphys=nphys, speedstr=speedstr, last=last)
             for end_device in port.end_devices:
-                self.add_child(SDEndDeviceNode, end_device, nphys=nphys,
+                self.add_child(SDEndDeviceNode, end_device, nphys=nphys, speedstr=speedstr,
                                last=last)
 
     def __str__(self):
@@ -192,24 +229,27 @@ class SDExpanderNode(SDHostNode):
         expander = self.baseobj
 
         if verb > 1:
-            exp_info = format_attrs((('vendor', 'vendor_id'),
+            exp_info = ' ' + format_attrs((('vendor', 'vendor_id'),
                                      ('product', 'product_id'),
                                      ('rev', 'product_rev')),
                                     expander.attrs)
+            speed_info = ' (%s)' % self.speedstr
         elif verb > 0:
-            exp_info = expander.attrs.get('vendor_id', 'N/A')
+            exp_info = ' ' + expander.attrs.get('vendor_id', 'N/A')
+            speed_info = ' (%s)' % self.speedstr
         else:
             exp_info = ''
+            speed_info = ''
 
         linkinfo = '%dx--' % self.nphys
 
         if self.disp['addr']:
-            dev_info = format_attrs((('addr', 'sas_address'),),
+            dev_info = ' ' + format_attrs((('addr', 'sas_address'),),
                                     expander.sas_device.attrs)
         else:
             dev_info = ''
 
-        return '%s%s %s %s' % (linkinfo, expander.name, exp_info, dev_info)
+        return '%s%s%s%s%s' % (linkinfo, expander.name, exp_info, dev_info, speed_info)
 
 
 class SDEndDeviceNode(SDNode):
@@ -239,7 +279,7 @@ class SDEndDeviceNode(SDNode):
         self.proffset = len(linkinfo)
         for index, target in enumerate(self.baseobj.targets):
             last = bool(index == len(self.baseobj.targets) - 1)
-            self.add_child(SDSCSIDeviceNode, target, last=last)
+            self.add_child(SDSCSIDeviceNode, target, last=last, speedstr=self.speedstr)
 
     def __str__(self):
         verb = self.disp.get('verbose')
@@ -247,17 +287,20 @@ class SDEndDeviceNode(SDNode):
         sas_end_device = self.baseobj
 
         bay = None
+        speed_info = ''
+        if verb > 0:
+            speed_info = " (%s)" % self.speedstr
+
         if verb > 1:
             try:
                 bay = int(sas_end_device.sas_device.attrs.bay_identifier)
             except (AttributeError, ValueError):
                 pass
 
-        istr = '%s%s' % (linkinfo, sas_end_device.name)
         if bay is None:
-            istr = '%s%s' % (linkinfo, sas_end_device.name)
+            istr = '%s%s%s' % (linkinfo, sas_end_device.name, speed_info)
         else:
-            istr = '%s%s bay: %d' % (linkinfo, sas_end_device.name, bay)
+            istr = '%s%s%s bay: %d' % (linkinfo, sas_end_device.name, speed_info, bay)
 
         if self.disp.get('addr'):
             addr = sas_end_device.sas_device.attrs.sas_address
