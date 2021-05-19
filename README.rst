@@ -141,7 +141,9 @@ For example, add the following to your udev rules:
 
     .. code-block::
 
-        KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
+        ENV{DEVTYPE}=="disk", KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
+        ENV{DEVTYPE}=="partition", KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%cp%n"
+
 
 This should generate udev aliases made of the device subenclosure nickname followed by the bay identifier. In the following case, *io1-jbod1-0* is the subenclosure nickname (here SIM 0 of JBOD #1).
 
