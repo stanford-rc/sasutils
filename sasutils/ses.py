@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016
+# Copyright (C) 2016, 2021
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
@@ -31,7 +31,31 @@ LOGGER = logging.getLogger(__name__)
 
 def ses_get_snic_nickname(sg_name):
     """Get subenclosure nickname (SES-2) [snic]"""
+    support_snic = False
+
     # SES nickname is not available through sysfs, use sg_ses tool instead
+    cmdargs = ['sg_ses', '--status', '/dev/' + sg_name]
+    LOGGER.debug('ses_get_snic_nickname: executing: %s', cmdargs)
+    try:
+        stdout, stderr = subprocess.Popen(cmdargs,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+    except OSError as err:
+        LOGGER.warning('ses_get_snic_nickname: %s', err)
+        return None
+
+    for line in stderr.decode("utf-8").splitlines():
+        LOGGER.debug('ses_get_snic_nickname: sg_ses(stderr): %s', line)
+
+    for line in stdout.decode("utf-8").splitlines():
+        LOGGER.debug('ses_get_snic_nickname: sg_ses: %s', line)
+        if '[snic]' in line:
+            support_snic = True
+            break
+
+    if not support_snic:
+        return None
+
     cmdargs = ['sg_ses', '--page=snic', '-I0', '/dev/' + sg_name]
     LOGGER.debug('ses_get_snic_nickname: executing: %s', cmdargs)
     try:
