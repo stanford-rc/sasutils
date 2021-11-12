@@ -7,9 +7,9 @@ show Serial Attached SCSI (SAS) counters
 ----------------------------------------
 
 :Author: Stephane Thiell <sthiell@stanford.edu>
-:Date:   2017-08-16
+:Date:   2021-11-12
 :Copyright: Apache License Version 2.0
-:Version: 0.3.5
+:Version: 0.3.11
 :Manual section: 1
 :Manual group: sasutils
 
