@@ -80,11 +80,11 @@ class SysfsNode(object):
             if isfile(path) and access(path, R_OK):
                 try:
                     with open(path, 'rb') as fp:
-                        data = fp.read().strip()
+                        data = fp.read()
                         try:
-                            data = data.decode("utf-8", errors='backslashreplace')
+                            data = data.decode("utf-8").strip()
                         except UnicodeDecodeError:
-                            pass
+                            data = data
                         yield data
                 except IOError as exc:
                     if not ignore_errors:

@@ -156,7 +156,11 @@ class SASDevicesCLI(object):
             for scsi_device in sas_end_device.targets:
                 if scsi_device.block:
                     try:
-                        pg83 = bytes(scsi_device.attrs.vpd_pg83)
+                        try:
+                            pg83 = bytes(scsi_device.attrs.vpd_pg83)
+                        except TypeError:
+                            pg83 = bytes(scsi_device.attrs.vpd_pg83,
+                                         encoding='utf-8')
                         lu = vpd_decode_pg83_lu(pg83)
                     except (AttributeError, struct.error):
                         lu = vpd_get_page83_lu(scsi_device.block.name)
