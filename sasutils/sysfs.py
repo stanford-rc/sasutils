@@ -84,7 +84,7 @@ class SysfsNode(object):
                         try:
                             data = data.decode("utf-8").strip()
                         except UnicodeDecodeError:
-                            data = data
+                            pass
                         yield data
                 except IOError as exc:
                     if not ignore_errors:
