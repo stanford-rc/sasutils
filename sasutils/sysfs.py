@@ -16,7 +16,10 @@
 # limitations under the License.
 
 
-import collections
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
 import json
 import glob
 from os import access, listdir, readlink, R_OK
@@ -141,7 +144,7 @@ SYSFSNODE_CLASS = SysfsNode
 sysfs = SYSFSNODE_CLASS()
 
 
-class SysfsAttributes(collections.MutableMapping):
+class SysfsAttributes(MutableMapping):
     """SysfsObject attributes with dot.notation access"""
 
     def __init__(self):
