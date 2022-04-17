@@ -76,7 +76,7 @@ def ses_get_snic_nickname(sg_name):
             return mobj.group(1)
 
 def ses_set_snic_nickname(sg_name,nickname):
-    """Get subenclosure nickname (SES-2) [snic]"""
+    """Set subenclosure nickname (SES-2) [snic]"""
     support_snic = False
 
     # SES nickname is not available through sysfs, use sg_ses tool instead
