@@ -55,11 +55,18 @@ def sas_sd_snic_alias(blkdev):
     #   eg. /sys/block/sdx/device
     blkdev = SASBlockDevice(sysfs.node('block').node(blkdev).node('device'))
     sasdev = blkdev.end_device.sas_device
+    wwid = '%s_unknown' % blkdev.name
 
     if blkdev.array_device:
         # 'enclosure_device' symlink is present (preferred method)
         # Use array_device and enclosure to retrieve the ses sg name
         ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+        try:
+            # Use the wwid of the enclosure to create enclosure-specifc
+            # aliases if an enclosure nickname is not set
+            wwid = blkdev.array_device.enclosure.attrs.wwid
+        except AttributeError:
+            pass
     else:
         # 'enclosure_device' symlink is absent: use workaround (see NOTE)
         try:
@@ -75,7 +82,7 @@ def sas_sd_snic_alias(blkdev):
     bay = int(sasdev.attrs.bay_identifier)
 
     # Get subenclosure nickname
-    snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % blkdev.name
+    snic = ses_get_snic_nickname(ses_sg) or wwid
 
     return ALIAS_FORMAT.format(nickname=snic, bay_identifier=bay)
 

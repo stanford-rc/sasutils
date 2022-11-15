@@ -69,11 +69,18 @@ def sas_mpath_snic_alias(dmdev):
         # Instantiate a block device object with SAS attributes
         blkdev = SASBlockDevice(node.node('device'))
         sasdev = blkdev.end_device.sas_device
+        wwid = '%s_unknown' % dmdev
 
         if blkdev.array_device:
             # 'enclosure_device' symlink is present (preferred method)
             # Use array_device and enclosure to retrieve the ses sg name
             ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+            try:
+                # Use the wwid of the enclosure to create enclosure-specifc
+                # aliases if an enclosure nickname is not set
+                wwid = blkdev.array_device.enclosure.attrs.wwid
+            except AttributeError:
+                pass
         else:
             # 'enclosure_device' symlink is absent: use workaround (see NOTE)
             try:
@@ -89,7 +96,7 @@ def sas_mpath_snic_alias(dmdev):
         bayids.append(int(sasdev.attrs.bay_identifier))
 
         # Get subenclosure nickname
-        snic = ses_get_snic_nickname(ses_sg) or '%s_no_snic' % dmdev
+        snic = ses_get_snic_nickname(ses_sg) or wwid
         snics.append(snic)
 
     if not bayids or not snics:
