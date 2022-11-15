@@ -75,6 +75,46 @@ def ses_get_snic_nickname(sg_name):
         if mobj:
             return mobj.group(1)
 
+def ses_set_snic_nickname(sg_name, nickname):
+    """Set subenclosure nickname (SES-2) [snic]"""
+    support_snic = False
+
+    # SES nickname is not available through sysfs, use sg_ses tool instead
+    cmdargs = ['sg_ses', '--status', '/dev/' + sg_name]
+    LOGGER.debug('ses_set_snic_nickname: executing: %s', cmdargs)
+    try:
+        stdout, stderr = subprocess.Popen(cmdargs,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+    except OSError as err:
+        LOGGER.error('ses_set_snic_nickname: %s', err)
+        return
+
+    for line in stderr.decode("utf-8").splitlines():
+        LOGGER.debug('ses_set_snic_nickname: sg_ses(stderr): %s', line)
+
+    for line in stdout.decode("utf-8").splitlines():
+        LOGGER.debug('ses_set_snic_nickname: sg_ses: %s', line)
+        if '[snic]' in line:
+            support_snic = True
+            break
+
+    if not support_snic:
+        raise OSError(errno.ENOSYS, 'snic not supported by hardware')
+
+    cmdargs = ['sg_ses', '--control', f"--nickname={nickname}", '/dev/' + sg_name]
+    try:
+        stdout, stderr = subprocess.Popen(cmdargs,
+                                          stdout=subprocess.PIPE,
+                                          stderr=subprocess.PIPE).communicate()
+    except OSError as err:
+        LOGGER.error('ses_set_snic_nickname: %s', err)
+
+    for line in stderr.decode("utf-8").splitlines():
+        LOGGER.debug('ses_set_snic_nickname: sg_ses(stderr): %s', line)
+
+    for line in stdout.decode("utf-8").splitlines():
+        LOGGER.debug('ses_set_snic_nickname: sg_ses: %s', line)
 
 def _ses_get_ed_line(sg_name):
     """Helper function to get element descriptor associated lines."""
