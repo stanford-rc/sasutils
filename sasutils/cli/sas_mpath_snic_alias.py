@@ -49,17 +49,6 @@ def sas_mpath_snic_alias(dmdev):
     #   sanity: check if the bay identifers are the same
     #   find common snic part and return result
 
-    # NOTE: Unfortunately, we cannot always rely on sysfs block device
-    # 'enclosure_device' symlink to the array device (at least not on
-    # 3.10.0-327.36.3.el7). We have to do the enclosure lookup ourselves
-    # as a workaround.
-
-    # Preload enclosure dict (sas_address -> EnclosureDevice)
-    enclosures = {}
-    for encl in sysfs.node('class').node('enclosure'):
-        encldev = EnclosureDevice(encl.node('device'))
-        enclosures[encldev.attrs.sas_address] = encldev
-
     snics = []
     bayids = []
 
@@ -71,26 +60,15 @@ def sas_mpath_snic_alias(dmdev):
         sasdev = blkdev.end_device.sas_device
         wwid = '%s_unknown' % dmdev
 
-        if blkdev.array_device:
-            # 'enclosure_device' symlink is present (preferred method)
-            # Use array_device and enclosure to retrieve the ses sg name
-            ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
-            try:
-                # Use the wwid of the enclosure to create enclosure-specifc
-                # aliases if an enclosure nickname is not set
-                wwid = blkdev.array_device.enclosure.attrs.wwid
-            except AttributeError:
-                pass
-        else:
-            # 'enclosure_device' symlink is absent: use workaround (see NOTE)
-            try:
-                encl = enclosures[sasdev.attrs.enclosure_identifier]
-                ses_sg = encl.scsi_generic.sg_name
-            except KeyError:
-                # definitively not an array device
-                logging.warning('%s not an array device (%s)', blkdev.name,
-                                blkdev.sysfsnode.path)
-                continue
+        # 'enclosure_device' symlink is present (preferred method)
+        # Use array_device and enclosure to retrieve the ses sg name
+        ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+        try:
+            # Use the wwid of the enclosure to create enclosure-specifc
+            # aliases if an enclosure nickname is not set
+            wwid = blkdev.array_device.enclosure.attrs.wwid
+        except AttributeError:
+            pass
 
         # Retrieve bay_identifier from matching sas_device
         bayids.append(int(sasdev.attrs.bay_identifier))

@@ -134,20 +134,7 @@ class SASDevicesCLI(object):
         print(self.FMT_DEVLIST_VERB.format(**info))
 
     def print_end_devices(self, sysfsnode):
-
-        # NOTE: Unfortunately, we cannot always rely on sysfs block device
-        # 'enclosure_device' symlink to the array device (at least not on
-        # 3.10.0-327.36.3.el7). We have to do the enclosure lookup ourselves
-        # as a workaround.
-
-        # Preload enclosure dict (sas_address -> EnclosureDevice)
-        enclosures = {}
-        for encl in sysfs.node('class').node('enclosure'):
-            encldev = EnclosureDevice(encl.node('device'))
-            enclosures[encldev.attrs.sas_address] = encldev
-
         # This code is ugly and should be rewritten...
-
         devmap = {}  # LU -> list of (SASEndDevice, SCSIDevice)
 
         for node in sysfsnode:
@@ -187,13 +174,6 @@ class SASDevicesCLI(object):
                 else:
                     print("Warning: no enclosure symlink set for %s in %s" %
                           (blk.name, blk.scsi_device.sysfsnode.path))
-                    sasdev = sas_ed.sas_device
-                    try:
-                        encs.add(enclosures[sasdev.attrs.enclosure_identifier])
-                    except (AttributeError, KeyError):
-                        # not an array device?
-                        print("Warning: %s not an array device (%s)" %
-                              (blk.name, sasdev.sysfsnode.path))
             if not encs:
                 orphans.append((lu, dev_list))
                 continue
@@ -246,14 +226,6 @@ class SASDevicesCLI(object):
                         # 'enclosure_device' symlink is present
                         # (preferred method)
                         _encl = _blk.array_device.enclosure
-                    else:
-                        # 'enclosure_device' symlink is absent: use workaround
-                        try:
-                            _sasdev = _sas_ed.sas_device
-                            _encl = enclosures[_sasdev.attrs.enclosure_identifier]
-                        except (AttributeError, KeyError):
-                            # not an array device
-                            continue
                     if _encl in encset:
                         return True
                 return False
