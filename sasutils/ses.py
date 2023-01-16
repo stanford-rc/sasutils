@@ -102,7 +102,8 @@ def ses_set_snic_nickname(sg_name, nickname):
     if not support_snic:
         raise OSError(errno.ENOSYS, 'snic not supported by hardware')
 
-    cmdargs = ['sg_ses', '--control', f"--nickname={nickname}", '/dev/' + sg_name]
+    cmdargs = ['sg_ses', '--control', "--nickname=%s" % nickname,
+               '/dev/' + sg_name]
     try:
         stdout, stderr = subprocess.Popen(cmdargs,
                                           stdout=subprocess.PIPE,
