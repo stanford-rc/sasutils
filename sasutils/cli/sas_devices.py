@@ -224,10 +224,8 @@ class SASDevicesCLI(object):
                     assert _blk
                     if _blk.array_device:
                         # 'enclosure_device' symlink is present
-                        # (preferred method)
-                        _encl = _blk.array_device.enclosure
-                    if _encl in encset:
-                        return True
+                        if _blk.array_device.enclosure in encset:
+                            return True
                 return False
 
             encdevs = list(filter(enclosure_finder, devmap.items()))
