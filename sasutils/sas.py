@@ -26,6 +26,17 @@ from sasutils.sysfs import SysfsDevice
 class SASPhy(SysfsDevice):
     def __init__(self, device, subsys='sas_phy'):
         SysfsDevice.__init__(self, device, subsys)
+        self._port = None
+
+    @property
+    def port(self):
+        if self._port:
+            return self._port
+        try:
+            self._port = SASPort(self.sysfsnode.node('device/port'))
+        except KeyError:
+            pass # phy has no port
+        return self._port
 
 
 class SASPort(SysfsDevice):
