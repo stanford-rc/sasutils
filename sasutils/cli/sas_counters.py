@@ -116,7 +116,24 @@ class SDHostNode(SDNode):
             for key in ('invalid_dword_count', 'loss_of_dword_sync_count',
                         'phy_reset_problem_count',
                         'running_disparity_error_count'):
-                phykey = 'phys.%s.%s' % (phyid, key)
+                # Extra sg or block dev info for convenience – when possible!
+                extra = 'no_port'
+                # Resolve block device (if any) from phy
+                # - do not assume a phy has a port
+                # - a port may not have any end_devices
+                # - print block device first if available, then sg device
+                if phy.port:
+                    extra = 'no_dev'
+                    if phy.port.end_devices:
+                        extra = 'no_target'
+                        tgts = phy.port.end_devices[0].targets
+                        if tgts: # usually true but let's be robust
+                            tgt = tgts[0]
+                            if tgt.block:
+                                extra = tgt.block.name
+                            else:
+                                extra = tgt.scsi_generic.sg_name
+                phykey = 'phys.%s.%s.%s' % (phyid, extra, key)
                 try:
                     self.print_counter(phykey, phy.attrs.get(key))
                 except AttributeError as exc:
