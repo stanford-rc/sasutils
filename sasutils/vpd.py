@@ -64,7 +64,7 @@ def vpd_get_page80_sn(blkdev):
     env["PATH"] = "/lib/udev:" + env["PATH"]
     cmdargs = ['scsi_id', '--page=0x80', '--whitelisted',
                '--device=/dev/' + blkdev]
-    output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE).communicate()[0]
+    output = subprocess.Popen(cmdargs, stdout=subprocess.PIPE, env=env).communicate()[0]
     return output.decode("utf-8", errors='backslashreplace').rstrip().split()[-1]
 
 
