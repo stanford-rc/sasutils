@@ -47,7 +47,8 @@ class SASDevicesCLI(object):
 
     def __init__(self):
         parser = argparse.ArgumentParser()
-        parser.add_argument("-v", "--verbose", action="store_true")
+        parser.add_argument('--verbose', '-v', action='count', default=0,
+                            help='Verbosity level, repeat multiple times!')
         self.args = parser.parse_args()
 
     def print_hosts(self, sysfsnode):
@@ -56,7 +57,7 @@ class SASDevicesCLI(object):
             sas_hosts.append(SASHost(sas_host.node('device')))
 
         msgstr = "Found %d SAS hosts" % len(sas_hosts)
-        if self.args.verbose:
+        if self.args.verbose > 0:
             print("%s: %s" % (msgstr,
                               ','.join(host.name for host in sas_hosts)))
         else:
@@ -74,7 +75,7 @@ class SASDevicesCLI(object):
         # Group expanders by SAS address
         num_exp = 0
         for addr, expgroup in groupby(sas_expanders, attrgetter(attrname)):
-            if self.args.verbose:
+            if self.args.verbose > 0:
                 exps = list(expgroup)
                 explist = ','.join(exp.name for exp in exps)
                 print('SAS expander %s x%d (%s)' % (addr, len(exps), explist))
@@ -116,6 +117,11 @@ class SASDevicesCLI(object):
         return res
 
     def _print_lu_devlist(self, lu, devlist, maxpaths=None):
+        if self.args.verbose > 1:
+            for _, scsi_dev in devlist:
+                print("Info: %s: %s" % (scsi_dev.__class__.__name__,
+                                        scsi_dev.sysfsnode.path))
+
         # use the first device for the following common attributes
         info = self._get_dev_attrs(*devlist[0])
 
@@ -161,7 +167,6 @@ class SASDevicesCLI(object):
 
         # list of set of enclosure
         encgroups = []
-        orphans = []
 
         for lu, dev_list in devmap.items():
             encs = set()
@@ -171,12 +176,15 @@ class SASDevicesCLI(object):
                 if blk.array_device:
                     # 'enclosure_device' symlink is present (preferred method)
                     encs.add(blk.array_device.enclosure)
+                    if self.args.verbose > 1:
+                        print("Info: found enclosure device %s for block device %s" \
+                              % (blk.array_device.enclosure.sysfsnode.path,
+                                 blk.sysfsnode.path))
                 else:
-                    print("Warning: no enclosure symlink set for %s in %s" %
-                          (blk.name, blk.scsi_device.sysfsnode.path))
-            if not encs:
-                orphans.append((lu, dev_list))
-                continue
+                    encs.add(None)
+                    if self.args.verbose > 0:
+                        print("Warning: no enclosure symlink set for %s in %s" %
+                              (blk.name, blk.scsi_device.sysfsnode.path))
             done = False
             for encset in encgroups:
                 if not encset.isdisjoint(encs):
@@ -187,35 +195,15 @@ class SASDevicesCLI(object):
                 encgroups.append(encs)
 
         print("Found %d enclosure groups" % len(encgroups))
-        if orphans:
-            print("Found %d orphan devices" % len(orphans))
 
         for encset in encgroups:
             encinfolist = []
 
             def kfun(o):
-                return int(re.sub("\D", "", o.scsi_generic.name))
-            for enc in sorted(encset, key=kfun):
-                snic = ses_get_snic_nickname(enc.scsi_generic.name)
-                if snic:
-                    if self.args.verbose:
-                        encinfolist.append('[%s:%s]' % (enc.scsi_generic.name,
-                                                        snic))
-                    else:
-                        encinfolist.append('[%s]' % snic)
+                if o:
+                    return int(re.sub("\D", "", o.scsi_generic.name))
                 else:
-                    if self.args.verbose:
-                        vals = (enc.scsi_generic.name, enc.attrs.vendor,
-                                enc.attrs.model, enc.attrs.sas_address)
-                        encinfolist.append('[%s:%s %s, addr: %s]' % vals)
-                    else:
-                        vals = (enc.attrs.vendor, enc.attrs.model,
-                                enc.attrs.sas_address)
-                        encinfolist.append('[%s %s, addr: %s]' % vals)
-
-            print("Enclosure group: %s" % ''.join(encinfolist))
-
-            cnt = 0
+                    return -1
 
             def enclosure_finder(arg):
                 _lu, _dev_list = arg
@@ -228,14 +216,54 @@ class SASDevicesCLI(object):
                             return True
                 return False
 
-            encdevs = list(filter(enclosure_finder, devmap.items()))
+            def enclosure_absent(arg):
+                _lu, _dev_list = arg
+                for _sas_ed, _scsi_device in _dev_list:
+                    _blk = _scsi_device.block
+                    assert _blk
+                    if _blk.array_device:
+                        # 'enclosure_device' symlink is present
+                        if _blk.array_device.enclosure:
+                            return False
+                return True
+
+            if encset != set([None]):
+                for enc in sorted(encset, key=kfun):
+                    snic = ses_get_snic_nickname(enc.scsi_generic.name)
+                    if snic:
+                        if self.args.verbose > 0:
+                            encinfolist.append('[%s:%s]' % (enc.scsi_generic.name,
+                                                            snic))
+                        else:
+                            encinfolist.append('[%s]' % snic)
+                    else:
+                        if self.args.verbose > 0:
+                            vals = (enc.scsi_generic.name, enc.attrs.vendor,
+                                    enc.attrs.model, enc.attrs.sas_address)
+                            encinfolist.append('[%s:%s %s, addr: %s]' % vals)
+                        else:
+                            vals = (enc.attrs.vendor, enc.attrs.model,
+                                    enc.attrs.sas_address)
+                            encinfolist.append('[%s %s, addr: %s]' % vals)
+                encdevs = list(filter(enclosure_finder, devmap.items()))
+            else:
+                encinfolist.append('[orphans]')
+                encdevs = list(filter(enclosure_absent, devmap.items()))
+
+            print("Enclosure group: %s" % ''.join(encinfolist))
+
+            cnt = 0
+
             maxpaths = max(len(devs) for lu, devs in encdevs)
 
-            if self.args.verbose:
+            if self.args.verbose > 0:
                 print(self.FMT_DEVLIST_VERB.format(**self.HDR_DEVLIST_VERB))
 
                 def kfun(o):
-                    return int(o[1][0][0].sas_device.attrs.bay_identifier)
+                    try:
+                        return int(o[1][0][0].sas_device.attrs.bay_identifier)
+                    except ValueError:
+                        return -1
                 for lu, devlist in sorted(encdevs, key=kfun):
                     self._print_lu_devlist(lu, devlist, maxpaths)
                     cnt += 1
@@ -249,22 +277,17 @@ class SASDevicesCLI(object):
                                             devinfo.keys())(**devinfo)
                     folded.setdefault(folded_key, []).append(devlist)
                     cnt += 1
-                print("NUM   %12s %12s %6s %6s" % ('VENDOR', 'MODEL', 'REV',
-                                                   'PATHS'))
+                print("NUM   %12s %16s %6s %8s %6s" % ('VENDOR', 'MODEL', 'REV',
+                                                       'SIZE', 'PATHS'))
                 for t, v in folded.items():
                     if maxpaths and t.paths < maxpaths:
                         pathstr = '%s*' % t.paths
                     else:
                         pathstr = '%s ' % t.paths
-                    infofmt = '{vendor:>12} {model:>12} {rev:>6} {paths:>6}'
+                    infofmt = '{vendor:>12} {model:>16} {rev:>6} {blk_sz_info:>8} {paths:>6}'
                     infostr = infofmt.format(**t._asdict())
                     print('%3d x %s' % (len(v), infostr))
             print("Total: %d block devices in enclosure group" % cnt)
-
-        if orphans:
-            print("Orphan devices:")
-        for lu, blklist in orphans:
-            self._print_lu_devlist(lu, blklist)
 
 
 def main():
