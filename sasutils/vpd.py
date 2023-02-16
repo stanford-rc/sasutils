@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016
+# Copyright (C) 2016, 2023
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
@@ -29,7 +29,7 @@ def vpd_decode_pg83_lu(pagebuf):
     Get the addressed logical unit address from the device identification
     VPD page buffer provided (eg. content of vpd_pg83 in sysfs).
     """
-    vpd_assoc_lu = 0
+    VPD_ASSOC_LU = 0
     sz = len(pagebuf)
     offset = 4
     d, = unpack_from('B', pagebuf, offset + 2)
@@ -44,12 +44,12 @@ def vpd_decode_pg83_lu(pagebuf):
         if next_offset > sz:
             break
 
-        if design_type == 3 and assoc == vpd_assoc_lu:
-            d, = unpack_from('B', pagebuf, offset + 4)
-            naa = (d >> 4) & 0xff
-            return '0x' + ''.join("%02x" % i
-                                  for i in unpack_from('BBBBBBBB',
-                                                       pagebuf, offset + 4))
+        # We only support designator_type=3 (NAA) for now.
+        if design_type == 3 and assoc == VPD_ASSOC_LU:
+            d, = unpack_from('B', pagebuf, offset + 3)
+            if d in (8, 16):
+                return '0x' + ''.join("%02x" % i for i in \
+                    unpack_from('B' * d, pagebuf, offset + 4))
         offset = next_offset
 
 
