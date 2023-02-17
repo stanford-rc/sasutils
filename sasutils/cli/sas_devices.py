@@ -182,9 +182,8 @@ class SASDevicesCLI(object):
                                  blk.sysfsnode.path))
                 else:
                     encs.add(None)
-                    if self.args.verbose > 0:
-                        print("Warning: no enclosure symlink set for %s in %s" %
-                              (blk.name, blk.scsi_device.sysfsnode.path))
+                    print("Warning: no enclosure symlink set for %s in %s" %
+                          (blk.name, blk.scsi_device.sysfsnode.path))
             done = False
             for encset in encgroups:
                 if not encset.isdisjoint(encs):
@@ -227,8 +226,9 @@ class SASDevicesCLI(object):
                             return False
                 return True
 
-            if encset != set([None]):
-                for enc in sorted(encset, key=kfun):
+            has_orphans = False
+            for enc in sorted(encset, key=kfun):
+                if enc:
                     snic = ses_get_snic_nickname(enc.scsi_generic.name)
                     if snic:
                         if self.args.verbose > 0:
@@ -245,16 +245,22 @@ class SASDevicesCLI(object):
                             vals = (enc.attrs.vendor, enc.attrs.model,
                                     enc.attrs.sas_address)
                             encinfolist.append('[%s %s, addr: %s]' % vals)
-                encdevs = list(filter(enclosure_finder, devmap.items()))
-            else:
-                encinfolist.append('[orphans]')
+                else:
+                    has_orphans = True
+                    encinfolist.append('[**orphans found**]')
+
+            encdevs = []
+            if has_orphans:
                 encdevs = list(filter(enclosure_absent, devmap.items()))
+
+            if not encdevs:
+                encdevs = list(filter(enclosure_finder, devmap.items()))
 
             print("Enclosure group: %s" % ''.join(encinfolist))
 
-            cnt = 0
-
             maxpaths = max(len(devs) for lu, devs in encdevs)
+
+            cnt = 0
 
             if self.args.verbose > 0:
                 print(self.FMT_DEVLIST_VERB.format(**self.HDR_DEVLIST_VERB))
