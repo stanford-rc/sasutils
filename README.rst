@@ -1,4 +1,4 @@
-sasutils is a set of command-line tools and a Python library to ease the administration of Serial Attached SCSI (SAS) fabrics.
+sasutils is a set of command-line tools and a Python library to ease the administration of Serial Attached SCSI (SAS) storage networks.
 
 .. image:: https://img.shields.io/pypi/v/sasutils.svg
     :target: https://pypi.python.org/pypi/sasutils/
@@ -54,25 +54,132 @@ sas_discover
 ------------
 
 Display SAS topology. By default, **sas_discover** tries to fold common devices (like disks). Use ``-v``, ``-vv`` or ``-vvv`` and ``--addr`` to display more details.
+Below is an example with a large topology with multiple SAS HBAs, SAS switches and SAS JBODs.
 
     .. code-block::
 
         $ sas_discover -v
-        oak-io1-s1
-        |--host35 SAS9300-8e
-        |  `--8x--expander-35:0 ASTEK
-        |         |--1x--end_device-35:0:0
-        |         |      `--enclosure io1-sassw1 ASTEK
-        |         `--4x--expander-35:1 QCT
-        |            |-- 60 x end_device -- disk
-        |            `--  1 x end_device -- enclosure io1-jbod1-0 QCT
-        `--host36 SAS9300-8e
-           `--8x--expander-36:0 ASTEK
-                  |--1x--end_device-36:0:0
-                  |      `--enclosure io1-sassw2 ASTEK
-                  `--4x--expander-36:1 QCT
-                     |-- 60 x end_device -- disk
-                     `--  1 x end_device -- enclosure io1-jbod1-1 QCT
+        oak-io8-s2
+        |--host1 HBA 9500-16e
+        |  `--8x--expander-1:0 ASTEK 
+        |         |--1x--end_device-1:0:0
+        |         |      `--enclosure io8-sassw2 ASTEK 
+        |         |--4x--expander-1:1 HGST 
+        |         |      |--1x--end_device-1:1:0
+        |         |      |      `--enclosure io8-jbod1 HGST 
+        |         |      |--10x--expander-1:9 HGST 
+        |         |      |  `-- 50 x end_device -- disk
+        |         |      `--10x--expander-1:10 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         |--4x--expander-1:2 HGST 
+        |         |      |--1x--end_device-1:2:0
+        |         |      |      `--enclosure io8-jbod2 HGST 
+        |         |      |--10x--expander-1:11 HGST 
+        |         |      |  `-- 51 x end_device -- disk
+        |         |      `--10x--expander-1:12 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         |--4x--expander-1:3 HGST 
+        |         |      |--1x--end_device-1:3:0
+        |         |      |      `--enclosure io8-jbod3 HGST 
+        |         |      |--10x--expander-1:13 HGST 
+        |         |      |  `-- 51 x end_device -- disk
+        |         |      `--10x--expander-1:14 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         |--4x--expander-1:4 HGST 
+        |         |      |--1x--end_device-1:4:0
+        |         |      |      `--enclosure io8-jbod4 HGST 
+        |         |      |--10x--expander-1:15 HGST 
+        |         |      |  `-- 51 x end_device -- disk
+        |         |      `--10x--expander-1:16 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         |--4x--expander-1:5 HGST 
+        |         |      |--1x--end_device-1:5:0
+        |         |      |      `--enclosure io8-jbod5 HGST 
+        |         |      |--10x--expander-1:17 HGST 
+        |         |      |  `-- 51 x end_device -- disk
+        |         |      `--10x--expander-1:18 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         |--4x--expander-1:6 HGST 
+        |         |      |--1x--end_device-1:6:0
+        |         |      |      `--enclosure io8-jbod6 HGST 
+        |         |      |--10x--expander-1:19 HGST 
+        |         |      |  `-- 51 x end_device -- disk
+        |         |      `--10x--expander-1:20 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         |--4x--expander-1:7 HGST 
+        |         |      |--1x--end_device-1:7:0
+        |         |      |      `--enclosure io8-jbod7 HGST 
+        |         |      |--10x--expander-1:21 HGST 
+        |         |      |  `-- 51 x end_device -- disk
+        |         |      `--10x--expander-1:22 HGST 
+        |         |         `-- 51 x end_device -- disk
+        |         `--4x--expander-1:8 HGST 
+        |                |--1x--end_device-1:8:0
+        |                |      `--enclosure io8-jbod8 HGST 
+        |                |--10x--expander-1:23 HGST 
+        |                |  `-- 51 x end_device -- disk
+        |                `--10x--expander-1:24 HGST 
+        |                   `-- 51 x end_device -- disk
+        `--host10 HBA 9500-16e
+           `--8x--expander-10:0 ASTEK 
+                  |--1x--end_device-10:0:0
+                  |      `--enclosure io8-sassw1 ASTEK 
+                  |--4x--expander-10:1 HGST 
+                  |      |--1x--end_device-10:1:0
+                  |      |      `--enclosure io8-jbod1 HGST 
+                  |      |--10x--expander-10:9 HGST 
+                  |      |  `-- 50 x end_device -- disk
+                  |      `--10x--expander-10:10 HGST 
+                  |         `-- 51 x end_device -- disk
+                  |--4x--expander-10:2 HGST 
+                  |      |--1x--end_device-10:2:0
+                  |      |      `--enclosure io8-jbod2 HGST 
+                  |      |--10x--expander-10:11 HGST 
+                  |      |  `-- 51 x end_device -- disk
+                  |      `--10x--expander-10:12 HGST 
+                  |         `-- 51 x end_device -- disk
+                  |--4x--expander-10:3 HGST 
+                  |      |--1x--end_device-10:3:0
+                  |      |      `--enclosure io8-jbod3 HGST 
+                  |      |--10x--expander-10:13 HGST 
+                  |      |  `-- 51 x end_device -- disk
+                  |      `--10x--expander-10:14 HGST 
+                  |         `-- 51 x end_device -- disk
+                  |--4x--expander-10:4 HGST 
+                  |      |--1x--end_device-10:4:0
+                  |      |      `--enclosure io8-jbod4 HGST 
+                  |      |--10x--expander-10:15 HGST 
+                  |      |  `-- 51 x end_device -- disk
+                  |      `--10x--expander-10:16 HGST 
+                  |         `-- 51 x end_device -- disk
+                  |--4x--expander-10:5 HGST 
+                  |      |--1x--end_device-10:5:0
+                  |      |      `--enclosure io8-jbod5 HGST 
+                  |      |--10x--expander-10:17 HGST 
+                  |      |  `-- 51 x end_device -- disk
+                  |      `--10x--expander-10:18 HGST 
+                  |         `-- 51 x end_device -- disk
+                  |--4x--expander-10:6 HGST 
+                  |      |--1x--end_device-10:6:0
+                  |      |      `--enclosure io8-jbod6 HGST 
+                  |      |--10x--expander-10:19 HGST 
+                  |      |  `-- 51 x end_device -- disk
+                  |      `--10x--expander-10:20 HGST 
+                  |         `-- 51 x end_device -- disk
+                  |--4x--expander-10:7 HGST 
+                  |      |--1x--end_device-10:7:0
+                  |      |      `--enclosure io8-jbod7 HGST 
+                  |      |--10x--expander-10:21 HGST 
+                  |      |  `-- 51 x end_device -- disk
+                  |      `--10x--expander-10:22 HGST 
+                  |         `-- 51 x end_device -- disk
+                  `--4x--expander-10:8 HGST 
+                         |--1x--end_device-10:8:0
+                         |      `--enclosure io8-jbod8 HGST 
+                         |--10x--expander-10:23 HGST 
+                         |  `-- 51 x end_device -- disk
+                         `--10x--expander-10:24 HGST 
+                            `-- 51 x end_device -- disk
 
 
 sas_devices
@@ -82,7 +189,7 @@ Zeroconf tool that scans SAS devices and resolves associated enclosures. Useful 
 
 When used with -v, **sas_devices** will also display all disk devices with serial numbers.
 
-The following example shows a proper detection of a 60-disk JBOD with 2 SIMs (an "enclosure group").
+The following example shows a proper detection of a 60-disk JBOD with 2 SIMs/IOMs (an "enclosure group").
 
     .. code-block::
 
@@ -90,10 +197,36 @@ The following example shows a proper detection of a 60-disk JBOD with 2 SIMs (an
         Found 2 SAS hosts
         Found 4 SAS expanders
         Found 1 enclosure groups
-        Enclosure group: [io1-jbod1-0][io1-jbod1-1]
-        NUM         VENDOR        MODEL    REV  PATHS
-         60 x      SEAGATE ST8000NM0075   E002      2
+		Enclosure group: [io1-jbod1-0][io1-jbod1-1]
+		NUM         VENDOR            MODEL    REV     SIZE  PATHS
+		 60 x      SEAGATE     ST8000NM0075   E004    8.0TB      2
         Total: 60 block devices in enclosure group
+
+
+The following example shows a proper detection of four Seagate Exos E JBOFs with 15.4TB SSDs. Note that 2 IOMs are detected for each JBOF and they have the same SES-2 nickname (this is normal with this hardware).
+
+    .. code-block::
+
+        $ sas_devices
+        Found 2 SAS hosts
+        Found 8 SAS expanders
+        Found 4 enclosure groups
+        Enclosure group: [io1-jbof4][io1-jbof4]
+        NUM         VENDOR            MODEL    REV     SIZE  PATHS
+         24 x      SEAGATE   XS15360SE70084   0003   15.4TB      2
+        Total: 24 block devices in enclosure group
+        Enclosure group: [io1-jbof2][io1-jbof2]
+        NUM         VENDOR            MODEL    REV     SIZE  PATHS
+         24 x      SEAGATE   XS15360SE70084   0003   15.4TB      2
+        Total: 24 block devices in enclosure group
+        Enclosure group: [io1-jbof3][io1-jbof3]
+        NUM         VENDOR            MODEL    REV     SIZE  PATHS
+         24 x      SEAGATE   XS15360SE70084   0003   15.4TB      2
+        Total: 24 block devices in enclosure group
+        Enclosure group: [io1-jbof1][io1-jbof1]
+        NUM         VENDOR            MODEL    REV     SIZE  PATHS
+         24 x      SEAGATE   XS15360SE70084   0003   15.4TB      2
+        Total: 24 block devices in enclosure group
 
 
 ses_report
