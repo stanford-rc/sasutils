@@ -7,9 +7,9 @@ SCSI Enclosure Services (SES) status and metrics reporting utility
 ------------------------------------------------------------------
 
 :Author: Stephane Thiell <sthiell@stanford.edu>
-:Date:   2022-11-14
+:Date:   2023-02-16
 :Copyright: Apache License Version 2.0
-:Version: 0.3.13
+:Version: 0.4.0
 :Manual section: 1
 :Manual group: sasutils
 

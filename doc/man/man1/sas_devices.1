@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH SAS_DEVICES 1 "2022-11-14" "0.3.13" "sasutils"
-.SH NAME
-sas_devices \- show Serial Attached SCSI (SAS) enclosures and devices
 .
 .nr rst2man-indent-level 0
 .
@@ -30,26 +27,30 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "SAS_DEVICES" 1 "2023-02-16" "0.4.0" "sasutils"
+.SH NAME
+sas_devices \- show Serial Attached SCSI (SAS) enclosures and devices
 .SH SYNOPSIS
 .sp
-\fBsas_devices [\-h] [\-v]\fP
+\fBsas_devices [\-h] [\-vv]\fP
 .SH DESCRIPTION
 .sp
-\fBsas_devices\fP shows SAS devices and automatically resolves common associated
-enclosures (no configuration required). Useful to check cabling and hardware
-setup. When used with \fI\-v\fP, \fBsas_devices\fP will also display all disk devices
-with serial numbers.
+\fBsas_devices\fP shows SAS devices and automatically resolves multiple paths and
+common associated enclosures (no configuration required). Useful to check
+cabling and hardware setup. When used with \fI\-v\fP, \fBsas_devices\fP will also
+display all disk devices with serial numbers. Adding a second \fI\-v\fP will display
+additional information like some sysfs paths involved.
 .SH OPTIONS
 .INDENT 0.0
 .TP
 .B optional arguments:
 .INDENT 7.0
 .TP
-.B \-h\fP,\fB  \-\-help
+.B  \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
-.B \-v\fP,\fB  \-\-verbose
-enable verbose output
+.B  \-v\fP,\fB  \-\-verbose
+verbosity level, repeat multiple times!
 .UNINDENT
 .UNINDENT
 .SH EXIT STATUS
@@ -59,10 +60,12 @@ An exit status of zero indicates success of the command, and failure otherwise.
 .sp
 \fBsas_counters\fP(1), \fBsas_discover\fP(1), \fBses_report\fP(1)
 .SH BUG REPORTS
+.sp
+Use the following URL to submit a bug report or feedback:
 .INDENT 0.0
-.TP
-.B Use the following URL to submit a bug report or feedback:
+.INDENT 3.5
 \fI\%https://github.com/stanford\-rc/sasutils/issues\fP
+.UNINDENT
 .UNINDENT
 .SH AUTHOR
 Stephane Thiell <sthiell@stanford.edu>

@@ -1,8 +1,5 @@
 .\" Man page generated from reStructuredText.
 .
-.TH SAS_COUNTERS 1 "2022-11-14" "0.3.13" "sasutils"
-.SH NAME
-sas_counters \- show Serial Attached SCSI (SAS) counters
 .
 .nr rst2man-indent-level 0
 .
@@ -30,6 +27,9 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
+.TH "SAS_COUNTERS" 1 "2023-02-16" "0.4.0" "sasutils"
+.SH NAME
+sas_counters \- show Serial Attached SCSI (SAS) counters
 .SH SYNOPSIS
 .sp
 \fBsas_counters [\-h] [\-\-prefix PREFIX]\fP
@@ -44,12 +44,12 @@ for Carbon/Graphite with SAS topology information.
 .B optional arguments:
 .INDENT 7.0
 .TP
-.B \-h\fP,\fB  \-\-help
+.B  \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
 .BI \-\-prefix \ PREFIX
-carbon prefix (example: "datacenter.cluster", default is
-"sasutils.sas_counters")
+carbon prefix (example: \(dqdatacenter.cluster\(dq, default is
+\(dqsasutils.sas_counters\(dq)
 .UNINDENT
 .UNINDENT
 .SH EXIT STATUS

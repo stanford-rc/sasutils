@@ -7,9 +7,9 @@ show Serial Attached SCSI (SAS) enclosures and devices
 ------------------------------------------------------
 
 :Author: Stephane Thiell <sthiell@stanford.edu>
-:Date:   2022-11-14
+:Date:   2023-02-16
 :Copyright: Apache License Version 2.0
-:Version: 0.3.13
+:Version: 0.4.0
 :Manual section: 1
 :Manual group: sasutils
 
@@ -17,23 +17,24 @@ show Serial Attached SCSI (SAS) enclosures and devices
 SYNOPSIS
 ========
 
-``sas_devices [-h] [-v]``
+``sas_devices [-h] [-vv]``
 
 DESCRIPTION
 ===========
 
 
-``sas_devices`` shows SAS devices and automatically resolves common associated
-enclosures (no configuration required). Useful to check cabling and hardware
-setup. When used with `-v`, ``sas_devices`` will also display all disk devices
-with serial numbers.
+``sas_devices`` shows SAS devices and automatically resolves multiple paths and
+common associated enclosures (no configuration required). Useful to check
+cabling and hardware setup. When used with `-v`, ``sas_devices`` will also
+display all disk devices with serial numbers. Adding a second `-v` will display
+additional information like some sysfs paths involved.
 
 OPTIONS
 =======
 
 optional arguments:
   -h, --help        show this help message and exit
-  -v, --verbose     enable verbose output
+  -v, --verbose     verbosity level, repeat multiple times!
 
 EXIT STATUS
 ===========

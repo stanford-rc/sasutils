@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022
+# Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2023
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
@@ -17,7 +17,7 @@
 
 from setuptools import setup, find_packages
 
-VERSION = '0.3.13'
+VERSION = '0.4.0'
 
 setup(name='sasutils',
       version=VERSION,
