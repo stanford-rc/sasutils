@@ -20,7 +20,6 @@
 ses_report - SES status and metrics reporting utility
 """
 
-from __future__ import print_function
 import argparse
 import json
 import logging

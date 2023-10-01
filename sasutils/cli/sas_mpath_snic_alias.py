@@ -25,7 +25,6 @@ Example of udev rule:
 KERNEL=="dm-[0-9]*", PROGRAM="/usr/bin/sas_mpath_snic_alias %k", SYMLINK+="mapper/%c"
 """
 
-from __future__ import print_function
 import logging
 import os
 import sys

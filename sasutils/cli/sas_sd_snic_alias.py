@@ -25,7 +25,6 @@ Example of udev rule:
 KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
 """
 
-from __future__ import print_function
 import logging
 import sys
 
