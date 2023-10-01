@@ -42,6 +42,7 @@ FMT_MAP = { 'bay': 'BAY',
             'paths': 'PATHS',
             'rev': 'REV',
             'sgdevs': 'SG_DEVS',
+            'stdevs': 'ST_DEVS',
             'size': 'SIZE',
             'sn': 'SERIAL_NUMBER',
             'snic': 'NICKNAME',
@@ -56,8 +57,9 @@ DEF_FMT = '{type:>10} {vendor:>12} {model:>16} {rev:>6} {size:>7} {paths:>6}'
 
 # default format string in verbose mode
 DEF_FMT_VERB = '{bay:>3} {type:>10} {wwid:>24} {snic:>16} {dm:>18} ' \
-               '{blkdevs:>12} {sgdevs:>12} {paths:>5} {vendor:>8} ' \
-               '{model:>16} {sn:>20} {rev:>8} {size:>7} {state:>8}'
+               '{blkdevs:>12} {stdevs:>8} {sgdevs:>12} {paths:>5} ' \
+               '{vendor:>8} {model:>16} {sn:>20} {rev:>8} {size:>7} ' \
+               '{state:>8}'
 
 
 class SASDevicesCLI(object):
@@ -176,15 +178,11 @@ class SASDevicesCLI(object):
                 else:
                     blk_sz_info = "%.1fGB" % (blk_sz / 1e9)
                 res['size'] = blk_sz_info
-            else:
-                res['size'] = ''
 
         # Device Mapper name
         if 'dm' in self.fields:
             if scsi_device.block:
                 res['dm'] = scsi_device.block.dm()
-            else:
-                res['dm'] = ''
 
         # Bay identifier
         if 'bay' in self.fields:
@@ -224,10 +222,15 @@ class SASDevicesCLI(object):
 
         if 'blkdevs' in self.fields:
             res['blkdevs'] = ','.join(scsi_device.block.name
-                                       for sas, scsi_device in devlist if scsi_device.block)
+                                       for sas, scsi_device in devlist
+                                       if scsi_device.block)
         if 'sgdevs' in self.fields:
             res['sgdevs'] = ','.join(scsi_device.scsi_generic.sg_name
                                       for sas, scsi_device in devlist)
+        if 'stdevs' in self.fields:
+            res['stdevs'] = ','.join(scsi_device.tape.name
+                                       for sas, scsi_device in devlist
+                                       if scsi_device.tape)
 
         if 'paths' in self.fields:
             # Number of paths
@@ -405,7 +408,7 @@ class SASDevicesCLI(object):
                 folded.setdefault(folded_key, []).append(devlist)
                 used = False
                 for field in self.fields:
-                    if devinfo[field]:
+                    if devinfo.get(field):
                         field_trckr[field] = field_trckr.setdefault(field, 0) + 1
                         if not used:
                             used = True
