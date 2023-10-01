@@ -1,5 +1,8 @@
 .\" Man page generated from reStructuredText.
 .
+.TH SAS_DISCOVER 1 "2023-02-16" "0.4.0" "sasutils"
+.SH NAME
+sas_discover \- display Serial Attached SCSI (SAS) topology
 .
 .nr rst2man-indent-level 0
 .
@@ -27,9 +30,6 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "SAS_DISCOVER" 1 "2023-02-16" "0.4.0" "sasutils"
-.SH NAME
-sas_discover \- display Serial Attached SCSI (SAS) topology
 .SH SYNOPSIS
 .sp
 \fBsas_discover [\-h] [\-\-verbose] [\-\-addr] [\-\-devices] [\-\-counters]\fP
@@ -38,7 +38,7 @@ sas_discover \- display Serial Attached SCSI (SAS) topology
 \fBsas_discover\fP displays the SAS topology from the host initiator(s), through
 any SAS expanders up to the SAS targets. Each link usually represents a SAS
 port connection, whether it uses one or more PHYs.  The number of PHYs per port
-is explicitly shown if greater than one (eg. \(dq\-\-4x\-\-\(dq for a 4\-PHY wide port).
+is explicitly shown if greater than one (eg. "\-\-4x\-\-" for a 4\-PHY wide port).
 Please note that by default, \fBsas_discover\fP tries to fold common devices
 (like disks), like in the example below:
 .INDENT 0.0
@@ -66,19 +66,19 @@ topology.
 .B optional arguments:
 .INDENT 7.0
 .TP
-.B  \-h\fP,\fB  \-\-help
+.B \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
-.B  \-\-verbose\fP,\fB  \-v
+.B \-\-verbose\fP,\fB  \-v
 Verbosity level, repeat multiple times!
 .TP
-.B  \-\-addr
+.B \-\-addr
 Print SAS addresses
 .TP
-.B  \-\-devices
+.B \-\-devices
 Print associated devices
 .TP
-.B  \-\-counters
+.B \-\-counters
 Print I/O counters
 .UNINDENT
 .UNINDENT

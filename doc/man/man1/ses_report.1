@@ -1,5 +1,8 @@
 .\" Man page generated from reStructuredText.
 .
+.TH SES_REPORT 1 "2023-02-16" "0.4.0" "sasutils"
+.SH NAME
+ses_report \- SCSI Enclosure Services (SES) status and metrics reporting utility
 .
 .nr rst2man-indent-level 0
 .
@@ -27,9 +30,6 @@ level margin: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .\" new: \\n[rst2man-indent\\n[rst2man-indent-level]]
 .in \\n[rst2man-indent\\n[rst2man-indent-level]]u
 ..
-.TH "SES_REPORT" 1 "2023-02-16" "0.4.0" "sasutils"
-.SH NAME
-ses_report \- SCSI Enclosure Services (SES) status and metrics reporting utility
 .SH SYNOPSIS
 .sp
 \fBses_report [\-h] [\-d] (\-c | \-s) [\-\-prefix PREFIX] [\-j]\fP
@@ -50,17 +50,17 @@ Descriptors.
 .B optional arguments:
 .INDENT 7.0
 .TP
-.B  \-h\fP,\fB  \-\-help
+.B \-h\fP,\fB  \-\-help
 show this help message and exit
 .TP
-.B  \-d\fP,\fB  \-\-debug
+.B \-d\fP,\fB  \-\-debug
 enable debugging
 .TP
-.B  \-c\fP,\fB  \-\-carbon
+.B \-c\fP,\fB  \-\-carbon
 output SES Element descriptors metrics in a format suitable
 for Carbon/Graphite
 .TP
-.B  \-s\fP,\fB  \-\-status
+.B \-s\fP,\fB  \-\-status
 output status found in SES Element descriptors
 .UNINDENT
 .TP
@@ -68,10 +68,10 @@ output status found in SES Element descriptors
 .INDENT 7.0
 .TP
 .BI \-\-prefix \ PREFIX
-carbon prefix (example: \(dqdatacenter.cluster\(dq, default is
-\(dqsasutils.ses_report\(dq)
+carbon prefix (example: "datacenter.cluster", default is
+"sasutils.ses_report")
 .TP
-.B  \-j\fP,\fB  \-\-json
+.B \-j\fP,\fB  \-\-json
 alternative JSON output mode
 .UNINDENT
 .UNINDENT
