@@ -40,6 +40,7 @@ install -p -m 0644 doc/man/man1/ses_report.1 %{buildroot}/%{_mandir}/man1/
 %{_bindir}/sas_discover
 %{_bindir}/sas_mpath_snic_alias
 %{_bindir}/sas_sd_snic_alias
+%{_bindir}/sas_st_snic_alias
 %{_bindir}/ses_report
 %{python3_sitelib}/sasutils/
 %{python3_sitelib}/sasutils-*-py%{python3_version}.egg-info

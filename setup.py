@@ -47,6 +47,7 @@ setup(name='sasutils',
               'sas_discover=sasutils.cli.sas_discover:main',
               'sas_mpath_snic_alias=sasutils.cli.sas_mpath_snic_alias:main',
               'sas_sd_snic_alias=sasutils.cli.sas_sd_snic_alias:main',
+              'sas_st_snic_alias=sasutils.cli.sas_st_snic_alias:main',
               'ses_report=sasutils.cli.ses_report:main'
           ],
       },
