@@ -19,10 +19,11 @@ sasutils command-line tools
 * sas_discover
 * ses_report
 
-Also, two "zeroconf" udev scripts for use in udev rules that create friendly device aliases using SES-2 subenclosure nicknames.
+Also, a few "zeroconf" udev scripts for use in udev rules that create friendly device aliases using SES-2 subenclosure nicknames.
 
 * sas_mpath_snic_alias
 * sas_sd_snic_alias
+* sas_st_snic_alias
 
 .. note::
 
@@ -182,6 +183,11 @@ Below is an example with a large topology with multiple SAS HBAs, SAS switches a
                             `-- 51 x end_device -- disk
 
 
+Use ``sas_discover --counters`` to display the number of SCSI commands issued (`req`), completed or rejected (`done`) and the ones that completed with an error (`error`).
+
+.. image:: https://raw.githubusercontent.com/stanford-rc/sasutils/master/doc/examples/sas_discover_counters_tape.svg
+
+
 sas_devices
 -----------
 
@@ -265,16 +271,23 @@ Use -s to get the status of all detected SES Element Descriptors.
        **ses_report** requires a recent version of *sg3_utils* and won't work with the version shipped with CentOS 6 for example.
 
 
-sas_sd_snic_alias
------------------
+sas_sd_snic_alias and sas_st_snic_alias
+---------------------------------------
 
 Generate udev aliases using the SES-2 subenclosure nickname and bay identifier of each device.
+These scripts can also be used as examples and adapted to your specific needs.
 
-For example, add the following to your udev rules:
+For example, for block devices, add the following to your udev rules:
 
     .. code-block::
 
         KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
+
+Or, for SAS tape drives behind SAS switches (that act as enclosures):
+
+    .. code-block::
+
+        KERNEL=="st*", PROGRAM="/usr/bin/sas_st_snic_alias %k", SYMLINK+="%c"
 
 This should generate udev aliases made of the device subenclosure nickname followed by the bay identifier. In the following case, *io1-jbod1-0* is the subenclosure nickname (here SIM 0 of JBOD #1).
 
