@@ -17,6 +17,8 @@
 
 
 from sasutils.sysfs import SysfsDevice, SysfsObject
+import re
+import warnings
 
 
 # DEVICE TYPES
@@ -56,6 +58,13 @@ MAP_TYPES = {TYPE_DISK: 'disk',
              TYPE_OSD: 'osd',
              TYPE_NO_LUN: 'no_lun'}
 
+
+def strtype(scsi_type):
+    try:
+        return MAP_TYPES[int(scsi_type)]
+    except ValueError:
+        return "unknown(%s)" % scsi_type
+
 #
 # SCSI classes
 #
@@ -82,6 +91,11 @@ class SCSIGeneric(SysfsDevice):
 
 
 class SCSIDevice(SysfsObject):
+    """
+    scsi_device
+
+    SCSIDevice -> array_device (ArrayDevice) -> enclosure (EnclosureDevice)
+    """
 
     def __init__(self, device):
         # scsi_device attrs attached to device
@@ -95,11 +109,28 @@ class SCSIDevice(SysfsObject):
             self.block = BlockDevice(self.sysfsnode, scsi_device=self)
         except KeyError:
             self.block = None
+        try:
+            # define scsi type string as strtype for convenience
+            self.strtype = strtype(self.attrs.type)
+        except AttributeError:
+            self.strtype = None
+        self._array_device = None
+
+    @property
+    def array_device(self):
+        if not self._array_device:
+            try:
+                array_node = self.sysfsnode.node('enclosure_device:*')
+                self._array_device = ArrayDevice(array_node)
+            except KeyError:
+                # no enclosure_device, this may happen due to sysfs issues
+                pass
+        return self._array_device
+
 
 #
 # SCSI bus classes
 #
-
 
 class EnclosureDevice(SCSIDevice):
     """Managed enclosure device"""
@@ -118,17 +149,14 @@ class ArrayDevice(SysfsObject):
 # Block devices
 #
 
-
 class BlockDevice(SysfsDevice):
     """
-    SASBlockDevice -> array_device (ArrayDevice) -> enclosure (EnclosureDevice)
+    scsi_disk
     """
-
     def __init__(self, device, subsys='block', scsi_device=None):
         SysfsDevice.__init__(self, device, subsys, sysfsdev_pattern='sd*')
         self._scsi_device = scsi_device
         self.queue = SysfsObject(self.sysfsnode.node('queue'))
-        self._array_device = None
 
     def json_serialize(self):
         data = dict(self.__dict__)
@@ -138,14 +166,10 @@ class BlockDevice(SysfsDevice):
 
     @property
     def array_device(self):
-        if not self._array_device:
-            try:
-                array_node = self.device.node('enclosure_device:*')
-                self._array_device = ArrayDevice(array_node)
-            except KeyError:
-                # no enclosure_device, this may happen due to sysfs issues
-                pass
-        return self._array_device
+        # moved to SCSIDevice but kept here for compat
+        warnings.warn("use .scsi_device.array_device instead",
+                      DeprecationWarning)
+        return self.scsi_device.array_device
 
     @property
     def scsi_device(self):

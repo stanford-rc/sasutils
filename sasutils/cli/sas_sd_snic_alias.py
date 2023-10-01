@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016, 2017
+# Copyright (C) 2016, 2017, 2023
 #      The Board of Trustees of the Leland Stanford Junior University
 # Written by Stephane Thiell <sthiell@stanford.edu>
 #
@@ -30,7 +30,6 @@ import logging
 import sys
 
 from sasutils.sas import SASBlockDevice
-from sasutils.scsi import EnclosureDevice
 from sasutils.ses import ses_get_snic_nickname
 from sasutils.sysfs import sysfs
 
@@ -48,11 +47,11 @@ def sas_sd_snic_alias(blkdev):
 
     # 'enclosure_device' symlink is present (preferred method)
     # Use array_device and enclosure to retrieve the ses sg name
-    ses_sg = blkdev.array_device.enclosure.scsi_generic.sg_name
+    ses_sg = blkdev.scsi_device.array_device.enclosure.scsi_generic.sg_name
     try:
         # Use the wwid of the enclosure to create enclosure-specifc
         # aliases if an enclosure nickname is not set
-        wwid = blkdev.array_device.enclosure.attrs.wwid
+        wwid = blkdev.scsi_device.array_device.enclosure.attrs.wwid
     except AttributeError:
         pass
 
