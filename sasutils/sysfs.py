@@ -24,6 +24,7 @@ import json
 import glob
 from os import access, listdir, readlink, R_OK
 from os.path import basename, isdir, isfile, join, realpath
+import re
 
 SYSFS_ROOT = '/sys'
 
@@ -65,15 +66,26 @@ class SysfsNode(object):
     def glob(self, pathname, is_dir=True):
         return list(self.iterglob(pathname, is_dir))
 
-    def node(self, pathname, default=None):
-        glob_res = list(self.iterglob(pathname))
+    def node(self, pathm, default=None):
+
+        # regex pre-processing for advanced matching
+        funcname = 'fullmatch'
+        if hasattr(pathm, funcname) and callable(getattr(pathm, funcname)):
+            for name in listdir(self.path):
+                if pathm.fullmatch(name):
+                    pathm = name
+                    break
+        if not isinstance(pathm, str):
+            raise KeyError(join(self.path, getattr(pathm, 'pattern', '?')))
+
+        glob_res = list(self.iterglob(pathm))
         try:
             return glob_res[0]
         except IndexError:
             if default is not None:
                 return default
             # print meaningfull error
-            raise KeyError(join(self.path, pathname))
+            raise KeyError(join(self.path, pathm))
 
     def iterget(self, pathname, ignore_errors, absolute=False):
         if absolute:
@@ -238,6 +250,5 @@ class SysfsObject(object):
 class SysfsDevice(SysfsObject):
     def __init__(self, device, subsys, sysfsdev_pattern='*[0-9]'):
         # only consider end_device-20:2:57, 20:0:119:0, host19
-        SysfsObject.__init__(self, device.node('%s/%s' % (subsys,
-                                                          sysfsdev_pattern)))
+        SysfsObject.__init__(self, device.node(subsys).node(sysfsdev_pattern))
         self.device = device
