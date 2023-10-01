@@ -15,7 +15,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from sasutils.scsi import BlockDevice, SCSIDevice, SCSIHost
+from sasutils.scsi import SCSIDevice, SCSIHost
+from sasutils.scsi import BlockDevice, TapeDevice
 from sasutils.sysfs import SysfsDevice
 
 
@@ -137,6 +138,22 @@ class SASBlockDevice(BlockDevice):
 
     def __init__(self, device):
         BlockDevice.__init__(self, device)
+        self._end_device = None
+
+    @property
+    def end_device(self):
+        if not self._end_device:
+            self._end_device = SASEndDevice(self.sysfsnode.node('../../../..'))
+        return self._end_device
+
+
+class SASTapeDevice(TapeDevice):
+    """
+    SAS-aware tape device class that allows direct access to SASEndDevice.
+    """
+
+    def __init__(self, device):
+        TapeDevice.__init__(self, device)
         self._end_device = None
 
     @property
