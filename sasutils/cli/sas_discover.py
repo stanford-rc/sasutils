@@ -24,7 +24,7 @@ import sys
 
 from sasutils.sas import SASHost
 from sasutils.ses import ses_get_snic_nickname
-from sasutils.scsi import MAP_TYPES, TYPE_ENCLOSURE
+from sasutils.scsi import TYPE_ENCLOSURE
 from sasutils.sysfs import sysfs
 
 
@@ -282,11 +282,7 @@ class SDSCSIDeviceNode(SDNode):
 
     def gathergrp(self):
         # gather group is our single child scsi type string
-        try:
-            scsi_dev_type = int(self.baseobj.attrs.type)
-            return MAP_TYPES.get(scsi_dev_type, 'unknown[%s]' % scsi_dev_type)
-        except ValueError:
-            return 'unknown'
+        return self.baseobj.strtype
 
     def resolve(self):
         verb = self.disp.get('verbose')
@@ -327,11 +323,7 @@ class SDSCSIDeviceNode(SDNode):
                 dev_sg = '(%s)' % sg.name
 
         scsi_type = scsi_device.attrs.type
-        unknown_type = 'unknown[%s]' % scsi_type
-        try:
-            dev_type = MAP_TYPES.get(int(scsi_type), unknown_type)
-        except ValueError:
-            dev_type = 'unknown scsi type'
+        dev_type = scsi_device.strtype
 
         if scsi_device.block:
             block = scsi_device.block
