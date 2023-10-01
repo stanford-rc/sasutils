@@ -47,6 +47,10 @@ class SysfsNode(object):
     def __hash__(self):
         return hash(realpath(self.path))
 
+    def __len__(self):
+        return len([self.__class__(join(self.path, name))
+                    for name in listdir(self.path)])
+
     def __iter__(self):
         return iter(self.__class__(join(self.path, name))
                     for name in listdir(self.path))
