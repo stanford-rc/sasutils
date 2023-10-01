@@ -45,21 +45,19 @@ FMT_MAP = { 'bay': 'BAY',
             'size': 'SIZE',
             'sn': 'SERIAL_NUMBER',
             'snic': 'NICKNAME',
+            'state': 'STATE',
+            'timeout': 'TIMEOUT',
             'type': 'TYPE',
             'vendor': 'VENDOR',
             'wwid': 'WWID' }
 
 # default format string
-DEF_FMT = '{type:>10} {vendor:>12} {model:>16} {rev:>6} {paths:>6}'
+DEF_FMT = '{type:>10} {vendor:>12} {model:>16} {rev:>6} {size:>7} {paths:>6}'
 
 # default format string in verbose mode
-DEF_FMT_VERB = '{bay:>3} {type:>10} {wwid:>24} {snic:>16} {dm:>18} {blkdevs:>12} ' \
-               '{sgdevs:>12} {paths:>5} {vendor:>8} {model:>16} ' \
-               '{sn:>20} {rev:>8} {size}'
-
-
-# fields that cannot be folded (switch to list mode)
-NOFOLD_KEYS = set(('bay', 'wwid', 'dm', 'blkdevs', 'sgdevs', 'sn'))
+DEF_FMT_VERB = '{bay:>3} {type:>10} {wwid:>24} {snic:>16} {dm:>18} ' \
+               '{blkdevs:>12} {sgdevs:>12} {paths:>5} {vendor:>8} ' \
+               '{model:>16} {sn:>20} {rev:>8} {size:>7} {state:>8}'
 
 
 class SASDevicesCLI(object):
@@ -81,15 +79,12 @@ class SASDevicesCLI(object):
         if self.args.verbose > 1:
             print('FORMAT: "%s"' % self.args.format)
 
-        self.fold = True
         self.fields = OrderedDict()
 
         for _, field, fmt_spec, _ in Formatter().parse(self.args.format):
             if field:
                 if field in FMT_MAP:
                     self.fields[field] = fmt_spec
-                    if field in NOFOLD_KEYS:
-                        self.fold = False
                 else:
                     parser.error('Unknown format field "%s"' % field)
         if not self.fields:
@@ -147,7 +142,7 @@ class SASDevicesCLI(object):
         if self.args.verbose > 0:
             print("Found %d SAS expanders" % num_exp)
 
-    def _get_dev_attrs_new(self, sas_end_device, scsi_device):
+    def _get_dev_attrs(self, sas_end_device, scsi_device):
         res = {}
 
         # scsi_device
@@ -157,6 +152,12 @@ class SASDevicesCLI(object):
 
         if 'rev' in self.fields:
             res['rev'] = scsi_device.attrs.rev
+
+        if 'state' in self.fields:
+            res['state'] = scsi_device.attrs.get('state', '')
+
+        if 'timeout' in self.fields:
+            res['timeout'] = scsi_device.attrs.get('timeout', '')
 
         if 'type' in self.fields:
             res['type'] = scsi_device.strtype
@@ -216,7 +217,7 @@ class SASDevicesCLI(object):
 
     def _get_devlist_attrs(self, wwid, devlist, maxpaths=None):
         # use the first device for the following common attributes
-        res = self._get_dev_attrs_new(*devlist[0])
+        res = self._get_dev_attrs(*devlist[0])
 
         if 'wwid' in self.fields:
             res['wwid'] = wwid
@@ -255,6 +256,9 @@ class SASDevicesCLI(object):
             sas_end_device = SASEndDevice(node.node('device'))
 
             for scsi_device in sas_end_device.targets:
+                if self.args.verbose > 1:
+                    print("Device: %s" % scsi_device.sysfsnode.path)
+
                 wwid = scsi_device.attrs.wwid
                 if not wwid:
                     if scsi_device.block:
@@ -416,7 +420,7 @@ class SASDevicesCLI(object):
 
             if cnt > 0:
                 if has_orphans:
-                    print("*** Devices with no enclosure")
+                    print("*** Standalone devices")
                 else:
                     print("*** Enclosure group: %s" % ''.join(encinfolist))
 
