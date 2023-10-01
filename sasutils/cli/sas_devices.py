@@ -47,6 +47,7 @@ FMT_MAP = { 'bay': 'BAY',
             'sn': 'SERIAL_NUMBER',
             'snic': 'NICKNAME',
             'state': 'STATE',
+            'target': 'TARGET',
             'timeout': 'TIMEOUT',
             'type': 'TYPE',
             'vendor': 'VENDOR',
@@ -59,7 +60,7 @@ DEF_FMT = '{type:>10} {vendor:>12} {model:>16} {rev:>6} {size:>7} {paths:>6}'
 DEF_FMT_VERB = '{bay:>3} {type:>10} {wwid:>24} {snic:>16} {dm:>18} ' \
                '{blkdevs:>12} {stdevs:>8} {sgdevs:>12} {paths:>5} ' \
                '{vendor:>8} {model:>16} {sn:>20} {rev:>8} {size:>7} ' \
-               '{state:>8}'
+               '{target:>10} {state:>8}'
 
 
 class SASDevicesCLI(object):
@@ -157,6 +158,9 @@ class SASDevicesCLI(object):
 
         if 'state' in self.fields:
             res['state'] = scsi_device.attrs.get('state', '')
+
+        if 'target' in self.fields:
+            res['target'] = str(scsi_device.sysfsnode)
 
         if 'timeout' in self.fields:
             res['timeout'] = scsi_device.attrs.get('timeout', '')
