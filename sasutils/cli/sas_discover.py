@@ -16,8 +16,8 @@
 # limitations under the License.
 
 
-from __future__ import print_function
 import argparse
+import ast
 from itertools import groupby
 import socket
 import sys
@@ -215,7 +215,9 @@ class SDExpanderNode(SDHostNode):
 class SDEndDeviceNode(SDNode):
     @property
     def gatherme(self):
-        return self.disp['verbose'] < 2 and len(self.children) <= 1
+        return (self.disp['verbose'] < 2 and not self.disp.get('addr')
+                and not self.disp.get('counters') \
+                and not self.disp.get('devices')) and len(self.children) <= 1
 
     def gathergrp(self):
         if self.children:
@@ -271,7 +273,8 @@ class SDSCSIDeviceNode(SDNode):
 
     @property
     def gatherme(self):
-        if self.disp['verbose'] >= 1:
+        if self.disp['verbose'] >= 1 or self.disp.get('addr') or \
+                self.disp.get('counters') or self.disp.get('devices'):
             return False
 
         # Do not gather enclosure
@@ -308,19 +311,24 @@ class SDSCSIDeviceNode(SDNode):
         if self.disp.get('addr'):
             dev_info_fmt.append('addr: {sas_address}')
         if self.disp.get('counters'):
-            dev_info_fmt.append('ioerr_cnt: {ioerr_cnt}')
-            dev_info_fmt.append('iodone_cnt: {iodone_cnt}')
+            dev_info_fmt.append('IO:{{req: {iorequest_cnt}')
+            dev_info_fmt.append('done: {iodone_cnt}')
+            dev_info_fmt.append('error: {ioerr_cnt}}}')
 
-        ikeys = (
-            'vendor', 'model', 'rev', 'sas_address', 'ioerr_cnt', 'iodone_cnt')
+        ikeys = ( 'vendor', 'model', 'rev', 'sas_address' )
         iargs = dict((k, scsi_device.attrs.get(k, 'N/A')) for k in ikeys)
+        if self.disp.get('counters'):
+            iokeys = ('ioerr_cnt', 'iodone_cnt', 'iorequest_cnt')
+            for key in iokeys:
+                iargs[key] = ast.literal_eval(scsi_device.attrs.get(key, 0))
+
         dev_info = ' '.join(dev_info_fmt).format(**iargs)
 
         dev_sg = ''
         if self.disp.get('devices'):
             sg = scsi_device.scsi_generic
             if sg:
-                dev_sg = '(%s)' % sg.name
+                dev_sg = '[%s]' % sg.name
 
         scsi_type = scsi_device.attrs.type
         dev_type = scsi_device.strtype
