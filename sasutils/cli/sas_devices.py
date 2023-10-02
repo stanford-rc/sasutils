@@ -54,7 +54,8 @@ FMT_MAP = { 'bay': 'BAY',
             'wwid': 'WWID' }
 
 # default format string
-DEF_FMT = '{type:>10} {vendor:>12} {model:>16} {rev:>6} {size:>7} {paths:>6}'
+DEF_FMT = '{type:>10} {vendor:>12} {model:>16} {rev:>6} {size:>7} ' \
+          '{paths:>6} {state:>9}'
 
 # default format string in verbose mode
 DEF_FMT_VERB = '{bay:>3} {type:>10} {wwid:>24} {snic:>16} {dm:>18} ' \
@@ -150,52 +151,66 @@ class SASDevicesCLI(object):
 
         # scsi_device
 
-        if 'model' in self.fields:
-            res['model'] = scsi_device.attrs.model
-
-        if 'rev' in self.fields:
-            res['rev'] = scsi_device.attrs.rev
-
-        if 'state' in self.fields:
-            res['state'] = scsi_device.attrs.get('state', '')
+        for key in ('model', 'rev', 'state', 'timeout', 'vendor'):
+            res[key] = ''
+            if key in self.fields:
+                try:
+                    res[key] = getattr(scsi_device.attrs, key)
+                except AttributeError as exc:
+                    print('ERROR: %s: %s' % (scsi_device, exc), file=sys.stderr)
+                    res[key] = '<error>'
 
         if 'target' in self.fields:
-            res['target'] = str(scsi_device.sysfsnode)
-
-        if 'timeout' in self.fields:
-            res['timeout'] = scsi_device.attrs.get('timeout', '')
+            res['target'] = ''
+            try:
+                res['target'] = str(scsi_device.sysfsnode)
+            except AttributeError as exc:
+                print('ERROR: %s: %s' % (scsi_device, exc), file=sys.stderr)
+                res['target'] = '<error>'
 
         if 'type' in self.fields:
-            res['type'] = scsi_device.strtype
+            res['type'] = ''
+            try:
+                res['type'] = scsi_device.strtype
+            except AttributeError as exc:
+                print('ERROR: %s: %s' % (scsi_device, exc), file=sys.stderr)
+                res['type'] = '<error>'
 
-        if 'vendor' in self.fields:
-            res['vendor'] = scsi_device.attrs.vendor
-
-        # block
-
+        # size of block device
         if 'size' in self.fields:
+            res['size'] = ''
             # Size of block device
             if scsi_device.block:
-                blk_sz = scsi_device.block.sizebytes()
-                if blk_sz >= 1e12:
-                    blk_sz_info = "%.1fTB" % (blk_sz / 1e12)
-                else:
-                    blk_sz_info = "%.1fGB" % (blk_sz / 1e9)
-                res['size'] = blk_sz_info
+                try:
+                    blk_sz = scsi_device.block.sizebytes()
+                    if blk_sz >= 1e12:
+                        blk_sz_info = "%.1fTB" % (blk_sz / 1e12)
+                    else:
+                        blk_sz_info = "%.1fGB" % (blk_sz / 1e9)
+                    res['size'] = blk_sz_info
+                except AttributeError as exc:
+                    print('ERROR: %s: %s' % (scsi_device, exc), file=sys.stderr)
+                    res['size'] = '<error>'
 
         # Device Mapper name
         if 'dm' in self.fields:
+            res['dm'] = ''
             if scsi_device.block:
-                res['dm'] = scsi_device.block.dm()
+                try:
+                    res['dm'] = scsi_device.block.dm()
+                except (AttributeError, ValueError):
+                    pass
 
         # Bay identifier
         if 'bay' in self.fields:
+            res['bay'] = ''
             try:
                 res['bay'] = int(sas_end_device.sas_device.attrs.bay_identifier)
             except (AttributeError, ValueError):
                 pass
 
         if 'sn' in self.fields:
+            res['sn'] = ''
             # Serial number
             try:
                 pg80 = scsi_device.attrs.vpd_pg80
@@ -204,8 +219,6 @@ class SASDevicesCLI(object):
                 if scsi_device.block:
                     pg80 = vpd_get_page80_sn(scsi_device.block.name)
                     res['sn'] = pg80
-                else:
-                    res['sn'] = ''
             res['sn'] = res['sn'].strip()
 
         # SES Subenclosure nickname
