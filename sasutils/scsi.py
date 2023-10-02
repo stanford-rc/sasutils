@@ -110,6 +110,10 @@ class SCSIDevice(SysfsObject):
         except KeyError:
             self.block = None
         try:
+            self.tape = TapeDevice(self.sysfsnode, scsi_device=self)
+        except KeyError:
+            self.tape = None
+        try:
             # define scsi type string as strtype for convenience
             self.strtype = strtype(self.attrs.type)
         except AttributeError:
@@ -193,3 +197,22 @@ class BlockDevice(SysfsDevice):
         except KeyError:
             return "[Not mapped]"
         return dm_dev.attrs.name
+
+#
+# Tape devices
+#
+
+class TapeDevice(SysfsDevice):
+    """
+    scsi_tape
+    """
+    def __init__(self, device, subsys='scsi_tape', scsi_device=None):
+        SysfsDevice.__init__(self, device, subsys,
+                             sysfsdev_pattern=re.compile(r'st[0-9]+'))
+        self._scsi_device = scsi_device
+
+    @property
+    def scsi_device(self):
+        if not self._scsi_device:
+            self._scsi_device = SCSIDevice(self.device)
+        return self._scsi_device
