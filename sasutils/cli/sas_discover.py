@@ -21,7 +21,6 @@ import ast
 from itertools import groupby
 import socket
 import sys
-import re
 
 from collections import Counter
 from sasutils.sas import SASHost
@@ -44,7 +43,8 @@ def format_attrs(attrlist, attrs):
 class SDNode(object):
     gatherme = False
 
-    def __init__(self, name, baseobj, nphys=0, speedstr='', depth=0, disp=None, prinfo=None):
+    def __init__(self, name, baseobj, nphys=0, speedstr='', depth=0, disp=None,
+                 prinfo=None):
         self.name = name
         self.baseobj = baseobj
         self.children = []
@@ -125,28 +125,19 @@ class SDNode(object):
         for index, (group, children) in enumerate(groups):
             last = bool(index == len(groups) - 1)
             prompt = self.gen_prompt(self.adv_prompt(last=last))
-
             speed_info = ''
             if self.disp.get('verbose') > 0:
-                speedstr = ''
                 speeds = []
-                for child in children:
-                    if len(list(children)) == 1:
-                        speeds.append(re.sub(r'[0-9]+x', '', child.speedstr))
-                    else:
-                        speeds.append(child.speedstr)
-                counts = Counter(speeds)
-                first = True
+                counts = Counter(child.speedstr for child in children)
                 for speed in counts:
-                    if first:
-                        speedstr = '%dx%s' % (counts[speed], speed)
-                        first = False
+                    if counts[speed] == 1:
+                        speeds.append(speed)
                     else:
-                        speedstr = '%s, %dx%s' % (speedstr, counts[speed], speed)
+                        speeds.append('%d x %s' % (counts[speed], speed))
 
-                speed_info = ' (%s)' % (speedstr)
-
-            print('%s %2d x %s%s' % (prompt, len(list(children)), group, speed_info))
+                speed_info = ' (%s)' % ', '.join(speeds)
+            print('%s %2d x %s%s' % (prompt, len(list(children)), group,
+                                     speed_info))
 
 class SDRootNode(SDNode):
     def resolve(self):
@@ -179,19 +170,10 @@ class SDHostNode(SDNode):
         ports = sorted(self.baseobj.ports, key=portsortfunc)
         for index, port in enumerate(ports):
             nphys = len(port.phys)
-            speedstr = ''
-            speeds = []
-            for phy in port.phys:
-                speeds.append(phy.attrs.negotiated_linkrate)
-            counts = Counter(speeds)
-            first = True
-            for speed in counts:
-                if first:
-                    speedstr = '%dx%s' % (counts[speed], speed)
-                    first = False
-                else:
-                    speedstr = '%s, %dx%s' % (speedstr, counts[speed], speed)
-
+            try:
+                speedstr = self._port_phys_linkrate(port)
+            except AttributeError as exc:
+                speedstr = 'ERROR: %s' % exc
             last = bool(index == len(self.baseobj.ports) - 1)
             for expander in port.expanders:
                 self.add_child(SDExpanderNode, expander, nphys=nphys, speedstr=speedstr, last=last)
@@ -224,6 +206,21 @@ class SDHostNode(SDNode):
                      for k in ikeys)
 
         return '%s %s' % (self.name, ', '.join(info_fmt).format(**iargs))
+
+    def _port_phys_linkrate(self, port):
+        """Get linkrate for all port phys as string"""
+        speeds = []
+        counts = Counter(phy.attrs.negotiated_linkrate for phy in port.phys)
+        for speed in counts:
+            if sys.stdout.isatty():
+                if counts[speed] != len(port.phys):
+                    fmt = "\033[91m{}\033[0m"
+                else:
+                    fmt = "\033[92m{}\033[0m"
+            else:
+                fmt = "{}"
+            speeds.append(fmt.format('%d x %s' % (counts[speed], speed)))
+        return ', '.join(speeds)
 
 
 class SDExpanderNode(SDHostNode):
