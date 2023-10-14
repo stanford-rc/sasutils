@@ -15,10 +15,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
+
 from sasutils.scsi import SCSIDevice, SCSIHost
 from sasutils.scsi import BlockDevice, TapeDevice
 from sasutils.sysfs import SysfsDevice
 
+
+LOGGER = logging.getLogger(__name__)
 
 #
 # SAS topology components
@@ -122,9 +126,15 @@ class SASEndDevice(SysfsDevice):
     def __init__(self, device, subsys='sas_end_device'):
         SysfsDevice.__init__(self, device, subsys)
         self.sas_device = SASDevice(device)
-        # a single SAS end device can handle several SCSI targets
-        self.targets = [SCSIDevice(dev) for dev in
-                        device.glob('target*/*[0-9]')]
+        # a single SAS end device may handle several SCSI targets
+        self.targets = []
+        for dev in device.glob('target*/*[0-9]'):
+            try:
+                self.targets.append(SCSIDevice(dev))
+            except KeyError as err:
+                # eg. scsi_generic doesn't exist
+                LOGGER.warning("WARNING: sysfs %s weirdness: %s" % \
+                               (subsys, repr(err)))
 
 
 #

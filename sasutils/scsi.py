@@ -15,10 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-from sasutils.sysfs import SysfsDevice, SysfsObject
 import re
 import warnings
+
+from sasutils.sysfs import SysfsDevice, SysfsObject
 
 
 # DEVICE TYPES
