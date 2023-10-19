@@ -40,7 +40,7 @@ def sas_sd_snic_alias(blkdev):
 
     # Instantiate SASBlockDevice object from block device sysfs node
     #   eg. /sys/block/sdx/device
-    blkdev = SASBlockDevice(sysfs.node('block').node(blkdev).node('device'))
+    blkdev = SASBlockDevice(sysfs.node('block').node(blkdev.rstrip('0123456789')).node('device'))
     sasdev = blkdev.end_device.sas_device
     wwid = '%s_unknown' % blkdev.name
 
