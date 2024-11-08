@@ -28,6 +28,10 @@ import re
 
 SYSFS_ROOT = '/sys'
 
+# Some VPDs contain weird characters...
+def sanitize_sysfs_value(value):
+    return value.strip('\x00').encode('ascii', errors='replace').decode()
+
 
 class SysfsNode(object):
     def __init__(self, path=None):
@@ -121,7 +125,7 @@ class SysfsNode(object):
                 raise KeyError('Not found: %s' % path)
             result = default
 
-        return result
+        return sanitize_sysfs_value(result)
 
     def readlink(self, pathname, default=None, absolute=False):
         if absolute:
@@ -177,7 +181,7 @@ class SysfsAttributes(MutableMapping):
     # The next five methods are requirements of the ABC.
 
     def __setitem__(self, key, value):
-        self.values[key] = value
+        self.values[key] = sanitize_sysfs_value(value)
 
     def get(self, key, default=None):
         if not self.values.__contains__(key):
@@ -189,6 +193,7 @@ class SysfsAttributes(MutableMapping):
                 else:
                     raise AttributeError("%r object has no attribute %r" %
                                          (self.__class__.__name__, key))
+
         return self.values[key]
 
     def __getitem__(self, key):

@@ -32,11 +32,7 @@ from sasutils.sysfs import sysfs
 def format_attrs(attrlist, attrs):
     """filter keys to avoid SysfsObject cache miss on all attrs"""
     attr_fmt = ('%s: {%s}' % t for t in attrlist)
-    # sanitize values for display
-    iargs = dict((k, attrs.get(k, 'N/A') \
-                        .strip('\x00') \
-                        .encode('ascii', errors='replace') \
-                        .decode()) for _, k in attrlist)
+    iargs = dict((k, attrs.get(k, 'N/A')) for _, k in attrlist)
     return ', '.join(attr_fmt).format(**iargs)
 
 
@@ -199,10 +195,7 @@ class SDHostNode(SDNode):
                  'version_fw')
 
         # sanitize values for display
-        iargs = dict((k, self.baseobj.scsi_host.attrs.get(k, 'N/A') \
-                            .strip('\x00') \
-                            .encode('ascii', errors='replace') \
-                            .decode())
+        iargs = dict((k, self.baseobj.scsi_host.attrs.get(k, 'N/A'))
                      for k in ikeys)
 
         return '%s %s' % (self.name, ', '.join(info_fmt).format(**iargs))
