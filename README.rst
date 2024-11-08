@@ -30,6 +30,12 @@ Also, a few "zeroconf" udev scripts for use in udev rules that create friendly d
        While **sasutils** gets most of the system data from sysfs (/sys), `sg_ses` (available in sg3_utils or sg3-utils)
        and `smp_discover` (available in smp_utils or smp-utils) are required for some SES features to work.
 
+.. warning::
+
+       **sasutils** is known to be broken with the new SAS 24Gb/s Broadcom driver mpi3mr. This driver is currently not
+       creating sas objects (sas_host, etc.) in sysfs, which are used by sasutils. Suggestions are welcome.
+
+
 sas_counters
 ------------
 
