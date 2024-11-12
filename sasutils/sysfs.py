@@ -30,7 +30,14 @@ SYSFS_ROOT = '/sys'
 
 # Some VPDs contain weird characters...
 def sanitize_sysfs_value(value):
-    return value.strip('\x00').encode('ascii', errors='replace').decode()
+    try:
+        value2 = value.strip('\x00')
+    except TypeError:
+        try:
+            value2 = value.strip(b'\x00').decode('ascii', errors='replace')
+        except Exception:
+            value2 = str(value).strip('\x00')
+    return value2.encode('ascii', errors='replace').decode()
 
 
 class SysfsNode(object):
