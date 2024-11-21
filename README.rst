@@ -287,7 +287,9 @@ For example, for block devices, add the following to your udev rules:
 
     .. code-block::
 
-        KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
+        ENV{DEVTYPE}=="disk", KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%c"
+        ENV{DEVTYPE}=="partition", KERNEL=="sd*", PROGRAM="/usr/bin/sas_sd_snic_alias %k", SYMLINK+="%cp%n"
+
 
 Or, for SAS tape drives behind SAS switches (that act as enclosures):
 
